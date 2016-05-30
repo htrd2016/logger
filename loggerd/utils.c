@@ -21,7 +21,7 @@ int get_next_line(uchar *szInSrc,
     uchar *src = szInSrc;
     uchar *pLineEndPos = src;
     *nLeftStringLength = nInSrcLength;
-    *nIsFullLine = 1;
+    *nIsFullLine = 0;
 
     //获取起始位置
     while (*src == '\n' || *src == '\r')
@@ -49,55 +49,29 @@ int get_next_line(uchar *szInSrc,
     *pOutLineStartPos = src;//获取起始不为\n或\r的值
 
     //获取结束位置
-    while (*src != '\n' && *src != '\r' && *src != '\0')
+    while (*src != '\n' && *src != '\0')
     {
-        if (src-szInSrc>=nInSrcLength)
+        if (src-szInSrc+1>=nInSrcLength)
         {
             break;
+        }
+
+        if(*src == '\r')
+        {
+            *src = '\0';
         }
         src++;
         (*nLeftStringLength)--;
     }
 
-    if(*src == '\0')
+    if(*src == '\n')
     {
-        *nIsFullLine = 0;
+        *src = '\0';
+        *nIsFullLine = 1;
     }
+    (*nLeftStringLength)--;
     pLineEndPos = src;
-    return pLineEndPos - (*pOutLineStartPos);
-}
-
-int read_next_line(const char *src, char ** pLineStart, char ** pLineEnd, int *pFullLine)
-{
-    *pFullLine = 0;
-    char *pStart = (char*)src;
-    char *pEnd = pStart;
-
-    while (*pStart == '\r' || *pStart == '\n')
-    {
-        pStart++;
-    }
-
-    pEnd = pStart;
-    while (*pEnd!='\r' && *pEnd !='\n' && *pEnd !='\0')
-    {
-        pEnd++;
-    }
-
-    if (*pEnd == '\0')
-    {
-        *pFullLine = 0;
-    }
-    else
-    {
-        *pFullLine = 1;
-    }
-
-    *pEnd = '\0';
-
-    *pLineStart = pStart;
-    *pLineEnd = pEnd;
-    return (pEnd-pStart);//do not have \0 in length
+    return pLineEndPos - (*pOutLineStartPos)+1;
 }
 
 /**

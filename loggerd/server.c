@@ -296,10 +296,8 @@ ssize_t read_socket_to_recv_buffer(Client *in_client, ThreadData *out_thread_dat
         nLeftLength=nLeftLength-(pRecvBuffer->data_end_ptr-pRecvBuffer->data_start_ptr+1);
     }
 
-    //printf("len to read=%d\n", nLeftLength);
-
-    uchar *write_ptr = pRecvBuffer->data_end_ptr==pRecvBuffer->data_start_ptr?
-                pRecvBuffer->data_start_ptr:pRecvBuffer->data_end_ptr+1;
+    uchar *write_ptr = (pRecvBuffer->data_end_ptr==pRecvBuffer->data_start_ptr)?
+                (pRecvBuffer->data_start_ptr):(pRecvBuffer->data_end_ptr+1);
     ssize_t nread = read(connfd, write_ptr, nLeftLength);//读取客户端socket流
     if (nread == 0)
     {
@@ -323,26 +321,20 @@ ssize_t read_socket_to_recv_buffer(Client *in_client, ThreadData *out_thread_dat
         return -1;
     }
 
-    //printf("read len=%d, index to write=%d\n", nread, block->bufIndexToWrite);
-    /**
-    * 1.one harf line "111111"
-    * 2.one or more full lines "111\r\n2222\r\n"
-    * 3.one or more full lines and harf line "111\n22222"
-    */
     uchar *line_start = NULL;
     uchar *line_end = NULL;
     int have_multi_line = 0;
     bool have_half_line = get_end_half_line(pRecvBuffer->data_start_ptr, write_ptr+nread-1,
                                             &line_start, &line_end, &have_multi_line);
 
-    //1
+    //1.one harf line "111111"
     if(have_multi_line==0 && have_half_line==true)
     {
         pRecvBuffer->data_end_ptr = write_ptr+nread-1;
         out_thread_data->free = true;
         return 0;
     }
-    //2
+    //2.one or more full lines "111\r\n2222\r\n"
     else if(have_multi_line==1 && have_half_line==false)
     {
         block->bufIndexToWrite++;
@@ -354,7 +346,7 @@ ssize_t read_socket_to_recv_buffer(Client *in_client, ThreadData *out_thread_dat
         out_thread_data->recv_buffer = pRecvBuffer;
         out_thread_data->have_data = true;
     }
-    //3
+    //3.one or more full lines and harf line "111\n22222"
     else
     {
         block->bufIndexToWrite++;
@@ -364,8 +356,6 @@ ssize_t read_socket_to_recv_buffer(Client *in_client, ThreadData *out_thread_dat
         }
 
         RecvBuffer *second_recv_buffer = get_next_free_recv_buffer(block);
-        //printf("block->bufIndexToWrite=%d\n", block->bufIndexToWrite);
-        //printf("%s--read !!!!---\n",get_current_time(t));
         if(second_recv_buffer == NULL)
         {
             printf("no more free recv buffer to get!!");
@@ -380,10 +370,8 @@ ssize_t read_socket_to_recv_buffer(Client *in_client, ThreadData *out_thread_dat
         *line_start = '\0';
         pRecvBuffer->data_end_ptr = pRecvBuffer->data_end_ptr+nread-copy_len;
         out_thread_data->recv_buffer = pRecvBuffer;
-        //printf("---=to-parse=len=%d==%d\n", nread, out_thread_data->recv_buffer);
         out_thread_data->have_data = true;
     }
-    //printf("ip=%s,port=%d,total-len=%d\n",in_client->szIP, in_client->nPort, nread);
     return nread;
 }
 
@@ -398,24 +386,5 @@ int handle(Client *pClient)
     }
 
     return read_socket_to_recv_buffer(pClient, pThreadData);
-    //    nread = read(connfd, buf, sizeof(buf));//读取客户端socket流
-    //    if (nread == 0)
-    //    {
-    //        printf("client close the connection\n");
-    //        mylog(configData.logfile, L_INFO, "client close the connection: %s %d", pClient->szIP, pClient->nPort);
-    //        pClient->free = true;
-
-    //        return -1;
-    //    }
-
-    //    if (nread < 0 && errno != EINTR)
-    //    {
-    //        perror("read error");
-    //        close(connfd);
-    //        pClient->free = true;
-    //        return -1;
-    //    }
-    //    printf("ip=%s,port=%d,total-len=%d\n",pClient->szIP, pClient->nPort, nread);
-    //    return 0;
 }
 

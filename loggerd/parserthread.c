@@ -35,11 +35,8 @@ void *pasreProc(void *p) {
           buf[nLength] = '\0';
           strcat(buf, "\n");
           static int lineId = 1;
-          // printf("[%d]line:%s\n", lineId, buf);
           fwrite(buf, strlen(buf), 1, file);
           fflush(file);
-          // fwrite(buf,"\n",1,file);
-          // mylog(LOG_FILE, L_INFO, "[%d]line:%s\n", lineId, buf);
           lineId++;
         }
 

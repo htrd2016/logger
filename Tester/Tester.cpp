@@ -190,45 +190,47 @@ TEST(TestgetEndHalfLine, getEndHalfLine2) {
   EXPECT_EQ(strcmp((char*)pLineStart, ""), 0);
 }
 
-TEST(readNextLine, readNextLine0) {
+TEST(get_next_line, get_next_line0) {
   int isFullLine = 0;
-  char szData[1024] = "May\n 06 19:39:58 hitrade1\r\n Receive Nak";
+  uchar szData[1024] = "May\n 06 19:39:58 hitrade1\r\n Receive Nak";
+  int leftStringLength = strlen((char*)szData);
 
-  char *pLineStart = NULL;
-  char *pLineEnd = NULL;
-  int nLen = read_next_line(szData, &pLineStart, &pLineEnd, &isFullLine);
-  EXPECT_STREQ(pLineStart, "May");
+  uchar *pLineStart = NULL;
+  int nLen = get_next_line(szData, leftStringLength, &pLineStart,
+                           &leftStringLength, &isFullLine);
+  EXPECT_STREQ((char*)pLineStart, "May");
   EXPECT_EQ(pLineStart, szData);
-  EXPECT_EQ(pLineEnd, szData + 3);
-  EXPECT_EQ(nLen, 3);
-  EXPECT_EQ(strlen(pLineStart), 3);
+  EXPECT_STREQ((char*)pLineStart+nLen, " 06 19:39:58 hitrade1\r\n Receive Nak");
+  EXPECT_EQ(nLen, 4);
+  EXPECT_EQ(leftStringLength, 35);
   EXPECT_EQ(isFullLine, 1);
 
-  nLen = read_next_line(pLineEnd + 1, &pLineStart, &pLineEnd, &isFullLine);
-  EXPECT_STREQ(pLineStart, " 06 19:39:58 hitrade1");
+  nLen = get_next_line(pLineStart+nLen, leftStringLength,
+                       &pLineStart, &leftStringLength, &isFullLine);
+  EXPECT_STREQ((char*)pLineStart, " 06 19:39:58 hitrade1");
   EXPECT_EQ(pLineStart, szData + 3 + 1);
-  EXPECT_EQ(pLineEnd, pLineStart + 21);
-  EXPECT_EQ(nLen, 21);
-  EXPECT_EQ(strlen(pLineStart), 21);
+  EXPECT_EQ(nLen, 23);
+  EXPECT_EQ(leftStringLength, 12);
   EXPECT_EQ(isFullLine, 1);
 
-  nLen = read_next_line(pLineEnd + 1, &pLineStart, &pLineEnd, &isFullLine);
-  EXPECT_STREQ(pLineStart, " Receive Nak");
+  nLen = get_next_line(pLineStart+nLen,leftStringLength,
+                       &pLineStart, &leftStringLength, &isFullLine);
+  EXPECT_STREQ((char*)pLineStart, " Receive Nak");
   EXPECT_EQ(pLineStart, szData + 3 + 1 + 21 + 2);
-  EXPECT_EQ(pLineEnd, pLineStart + 12);
   EXPECT_EQ(nLen, 12);
-  EXPECT_EQ(strlen(pLineStart), 12);
+  EXPECT_EQ(leftStringLength, 0);
+  EXPECT_EQ(strlen((char*)pLineStart), 12);
   EXPECT_EQ(isFullLine, 0);
 
-  nLen = read_next_line(pLineEnd + 1, &pLineStart, &pLineEnd, &isFullLine);
-  EXPECT_STREQ(pLineStart, "");
-  EXPECT_EQ(pLineEnd, pLineStart);
+  nLen = get_next_line(pLineStart+nLen,leftStringLength, &pLineStart, &leftStringLength, &isFullLine);
+  EXPECT_STREQ((char*)pLineStart, "");
   EXPECT_EQ(nLen, 0);
-  EXPECT_EQ(strlen(pLineStart), 0);
+  EXPECT_EQ(leftStringLength, 0);
+  EXPECT_EQ(strlen((char*)pLineStart), 0);
   EXPECT_EQ(isFullLine, 0);
 }
 
-TEST(get_next_line, get_next_line) {
+TEST(get_next_line, get_next_line1) {
   int nFullLine = 0;
   uchar szData[1024] = "May\n 06 19:39:58 hitrade1\r\n Receive Nak";
 
@@ -237,60 +239,66 @@ TEST(get_next_line, get_next_line) {
   int nLen =
       get_next_line(szData, srcLength, &pLineStart, &srcLength, &nFullLine);
   EXPECT_EQ(pLineStart, szData);
-  EXPECT_EQ(nLen, 3);
-  EXPECT_EQ(srcLength, 36);
+  EXPECT_EQ(nLen, 4);
+  EXPECT_EQ(srcLength, 35);
+  EXPECT_EQ(strlen((char*)pLineStart)+1, nLen);
   EXPECT_EQ(nFullLine, 1);
 
   pLineStart = pLineStart + nLen;
-  nLen =
-      get_next_line(pLineStart, srcLength, &pLineStart, &srcLength, &nFullLine);
+  nLen = get_next_line(pLineStart, srcLength, &pLineStart, &srcLength, &nFullLine);
   EXPECT_STREQ((char *)pLineStart, (char *)szData + 4);
-  EXPECT_EQ(nLen, 21);
-  EXPECT_EQ(srcLength, 14);
+  EXPECT_EQ(nLen, 23);
+  EXPECT_EQ(srcLength, 12);
   EXPECT_EQ(nFullLine, 1);
 
   pLineStart = pLineStart + nLen;
-  nLen =
-      get_next_line(pLineStart, srcLength, &pLineStart, &srcLength, &nFullLine);
+  nLen = get_next_line(pLineStart, srcLength, &pLineStart, &srcLength, &nFullLine);
   EXPECT_STREQ((char *)pLineStart, " Receive Nak");
   EXPECT_EQ(nLen, 12);
   EXPECT_EQ(srcLength, 0);
   EXPECT_EQ(nFullLine, 0);
 }
 
-TEST(readNextLine, readNextLine1) {
+TEST(get_next_line, get_next_line2) {
   int nFullLine = 0;
-  char szData[1024] = "May\n 06 19:39:58 hitrade1\r\n";
+  uchar szData[1024*2] = "Copyright (c) 2015, Brett824 and Hyphen-ated\n          All rights reserved.\r\n          Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:\n          1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.\r\n          2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.\n          THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS AS IS AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.";
+  int leftStringLength = strlen((char *)szData);
 
-  char *pLineStart = NULL;
-  char *pLineEnd = NULL;
-  int nLen = read_next_line(szData, &pLineStart, &pLineEnd, &nFullLine);
-  EXPECT_STREQ(pLineStart, "May");
-  EXPECT_EQ(pLineEnd, pLineStart + 3);
-  EXPECT_EQ(nLen, 3);
-  EXPECT_EQ(strlen(pLineStart), 3);
+  uchar *pLineStart = NULL;
+  int nLen = get_next_line(szData, leftStringLength, &pLineStart, &leftStringLength, &nFullLine);
+  EXPECT_STREQ((char*)pLineStart, (char*)szData);
+  EXPECT_STREQ((char*)pLineStart, "Copyright (c) 2015, Brett824 and Hyphen-ated");
+  EXPECT_EQ(nLen, 45);
+  EXPECT_EQ(strlen((char*)pLineStart)+1, nLen);
   EXPECT_EQ(nFullLine, 1);
 
-  nLen = read_next_line(pLineEnd + 1, &pLineStart, &pLineEnd, &nFullLine);
-  EXPECT_STREQ(pLineStart, " 06 19:39:58 hitrade1");
-  EXPECT_EQ(pLineEnd, pLineStart + 21);
-  EXPECT_EQ(nLen, 21);
-  EXPECT_EQ(strlen(pLineStart), 21);
+  nLen = get_next_line(pLineStart+nLen, leftStringLength, &pLineStart, &leftStringLength, &nFullLine);
+  EXPECT_STREQ((char*)pLineStart, "          All rights reserved.");
+  EXPECT_EQ(nLen, 32);
+  EXPECT_EQ(strlen((char*)pLineStart)+2, nLen);
   EXPECT_EQ(nFullLine, 1);
 
-  nLen = read_next_line(pLineEnd + 1, &pLineStart, &pLineEnd, &nFullLine);
-  EXPECT_STREQ(pLineStart, "");
-  EXPECT_EQ(pLineEnd, pLineStart);
-  EXPECT_EQ(nLen, 0);
-  EXPECT_EQ(strlen(pLineStart), 0);
-  EXPECT_EQ(nFullLine, 0);
+  nLen = get_next_line(pLineStart+nLen, leftStringLength, &pLineStart, &leftStringLength, &nFullLine);
+  EXPECT_STREQ((char*)pLineStart, "          Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:");
+  EXPECT_EQ(nLen, 153);
+  EXPECT_EQ(strlen((char*)pLineStart)+1, nLen);
+  EXPECT_EQ(nFullLine, 1);
 
-  nLen = read_next_line(pLineEnd + 1, &pLineStart, &pLineEnd, &nFullLine);
-  EXPECT_STREQ(pLineStart, "");
-  EXPECT_EQ(pLineEnd, pLineStart);
-  EXPECT_EQ(nLen, 0);
-  EXPECT_EQ(strlen(pLineStart), 0);
+  nLen = get_next_line(pLineStart+nLen, leftStringLength, &pLineStart, &leftStringLength, &nFullLine);
+  EXPECT_STREQ((char*)pLineStart, "          1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.");
+  EXPECT_EQ(nLen, 139);
+  EXPECT_EQ(strlen((char*)pLineStart)+2, nLen);
+  EXPECT_EQ(nFullLine, 1);
+
+  nLen = get_next_line(pLineStart+nLen, leftStringLength, &pLineStart, &leftStringLength, &nFullLine);
+  EXPECT_STREQ((char*)pLineStart, "          2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.");
+  EXPECT_EQ(nLen, 216);
+  EXPECT_EQ(strlen((char*)pLineStart)+1, nLen);
+  EXPECT_EQ(nFullLine, 1);
+
+  nLen = get_next_line(pLineStart+nLen, leftStringLength, &pLineStart, &leftStringLength, &nFullLine);
+  EXPECT_STREQ((char*)pLineStart, "          THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS AS IS AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.");
+  EXPECT_EQ(nLen, 763);
+  EXPECT_EQ(strlen((char*)pLineStart), nLen);
   EXPECT_EQ(nFullLine, 0);
 }
-
-
