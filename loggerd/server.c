@@ -287,14 +287,15 @@ ssize_t read_socket_to_recv_buffer(Client *in_client, ThreadData *out_thread_dat
         return -1;
     }
 
-    ssize_t nLeftLength = configData.size_of_buffer;
-    if (pRecvBuffer->data_end_ptr!=pRecvBuffer->data_start_ptr)
+    ssize_t nLeftLength = configData.size_of_buffer-1;
+    if (pRecvBuffer->data_end_ptr!=pRecvBuffer->buf_start)
     {
-        nLeftLength=nLeftLength-(pRecvBuffer->data_end_ptr-pRecvBuffer->data_start_ptr+1);
+        nLeftLength=nLeftLength-(pRecvBuffer->data_end_ptr-pRecvBuffer->buf_start+1);
     }
 
-    uchar *write_ptr = (pRecvBuffer->data_end_ptr==pRecvBuffer->data_start_ptr)?
-                (pRecvBuffer->data_start_ptr):(pRecvBuffer->data_end_ptr+1);
+    pRecvBuffer->buf_end = '\0';
+    uchar *write_ptr = (pRecvBuffer->data_end_ptr==pRecvBuffer->buf_start)?
+                (pRecvBuffer->buf_start):(pRecvBuffer->data_end_ptr+1);
     ssize_t nread = read(connfd, write_ptr, nLeftLength);//读取客户端socket流
     if (nread == 0)
     {
@@ -321,8 +322,11 @@ ssize_t read_socket_to_recv_buffer(Client *in_client, ThreadData *out_thread_dat
     uchar *line_start = NULL;
     uchar *line_end = NULL;
     int have_multi_line = 0;
-    bool have_half_line = get_end_half_line(pRecvBuffer->data_start_ptr, write_ptr+nread-1,
-                                            &line_start, &line_end, &have_multi_line);
+    bool have_half_line = get_end_half_line(pRecvBuffer->buf_start,
+                                            write_ptr+nread-1,
+                                            &line_start,
+                                            &line_end,
+                                            &have_multi_line);
 
     //1.one harf line "111111"
     if(have_multi_line==0 && have_half_line==true)

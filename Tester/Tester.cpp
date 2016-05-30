@@ -303,9 +303,9 @@ TEST(get_line, get_next_line2) {
   EXPECT_EQ(strlen((char*)pLineStart), nLen);
   EXPECT_EQ(nFullLine, 0);
 
-  uchar str[1024] = "wet\n123456";
+  uchar buf[1024] = "wet\n123456";
   remaning_length = 2;
-  nLen = get_line(str, remaning_length, &pLineStart,
+  nLen = get_line(buf, remaning_length, &pLineStart,
                        &remaning_length, &nFullLine);
   EXPECT_STREQ((char*)pLineStart, "wet\n123456");
   EXPECT_EQ(nLen, 2);

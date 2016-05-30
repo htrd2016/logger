@@ -5,9 +5,6 @@
 #include "types.h"
 #include "utils.h"
 
-// static uchar* base_configData.recv_data_memory = NULL;
-// static uchar* base_objects_memory = NULL;
-
 static void init_indicator();
 static int create_recv_buffer_mem();
 static int create_indicator_mem();
@@ -47,10 +44,6 @@ static int create_indicator_mem() {
       (sizeof(Block) + configData.buffer_amount_in_block * sizeof(RecvBuffer)) *
               configData.block_amount +
           configData.thread_amount * sizeof(ThreadData));
-
-  //    printf("base_objects_memory:%d-%d\n", base_objects_memory,
-  //           base_objects_memory+get_size_of_block()*configData.block_number
-  //           +configData.thread_number*sizeof(ThreadData));
   if (configData.indicator_memory) {
     configData.pBlock = (Block *)configData.indicator_memory;
     configData.pThreadData = (ThreadData *)(configData.indicator_memory +
@@ -68,9 +61,6 @@ static int create_recv_buffer_mem() {
   configData.recv_data_memory = (uchar *)calloc(
       1, configData.block_amount * configData.buffer_amount_in_block *
              configData.size_of_buffer);
-  //    printf("base_configData.recv_data_memory:%d-%d\n",
-  //    base_configData.recv_data_memory,
-  //           base_configData.recv_data_memory+get_recv_buffer_mem_size());
   return (configData.recv_data_memory == 0) ? (-1) : 0;
 }
 
@@ -107,15 +97,9 @@ static void init_indicator() {
         (RecvBuffer *)(configData.indicator_memory +
                        configData.block_amount * sizeof(Block) +
                        configData.buffer_amount_in_block * sizeof(RecvBuffer) * i);
-    //        printf("block:%d-%d\n", (int)pBlock,
-    //        (int)(void*)pBlock+sizeof(Block));
     for (j = 0; j < configData.buffer_amount_in_block; j++) // init buffers
     {
       init_recv_buffer(configData.pBlock[i].recvBufs + j, i, j);
-      //            printf("data_start_ptr:%d-%d\n",(int)pRecvBuffer->data_start_ptr,
-      //                   (int)pRecvBuffer->data_start_ptr+configData.size_of_buffer);
-      //            printf("recv:%d-%d\n", (int)pRecvBuffer,
-      //            (int)(void*)pRecvBuffer+sizeof(RecvBuffer));
     }
     configData.pBlock[i].pHeadPtr =
         (uchar *)(configData.pBlock[i].recvBufs->buf_start);
@@ -127,8 +111,6 @@ static void init_indicator() {
   for (i = 0; i < configData.thread_amount; i++) // init threaddatas
   {
     init_thread_data(configData.pThreadData + i);
-    //        printf("pThreadData:%d-%d\n", (int)pThreadData,
-    //        (int)(void*)pThreadData+sizeof(ThreadData));
   }
 }
 
@@ -150,7 +132,6 @@ void reset_block(Block *pBlock) {
   for (; i < configData.buffer_amount_in_block; i++) {
     pBlock->recvBufs[i].data_end_ptr = pBlock->recvBufs[i].data_start_ptr =
         pBlock->recvBufs[i].buf_start;
-    // pRecvBuffer->to_write_ptr = pRecvBuffer->data_start_ptr;
     pBlock->recvBufs[i].free = true;
   }
 }

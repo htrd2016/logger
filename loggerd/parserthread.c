@@ -15,7 +15,7 @@ void *pasreProc(void *p) {
   int nThreadID = threadIndex;
   ThreadData *pThreadData = (ThreadData *)p;
   char fileName[120];
-  sprintf(fileName, "./%dtxt.txt", threadIndex);
+  sprintf(fileName, "./log%d.txt", threadIndex);
   FILE *file = fopen(fileName, "a+");
   while (!configData.stop) {
     if (pThreadData->have_data == true) {

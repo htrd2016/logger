@@ -2,21 +2,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-/*
-params:
-    szInSrc:src data
-    nInSrcLength:src data length
-    pOutLineStartPos:first line start pos
-    nLeftStringLength:after this,left string length
-
-return:
-    fist line length
-*/
+/**
+ * @get the first line in the buffer to read,return the length of first line
+ */
 int get_line(uchar *buffer,
-                  int buffer_length,
-                  uchar **next_line,
-                  int *remaning_length,
-                  int *is_full_line)
+             int buffer_length,
+             uchar **next_line,
+             int *remaning_length,
+             int *is_full_line)
 {
     uchar *buf = buffer;
     uchar *pLineEndPos = buf;
@@ -78,15 +71,15 @@ int get_line(uchar *buffer,
 /**
   return:true-half line,false-full line
 */
-bool get_end_half_line(const uchar *str_src_start, const uchar *str_src_end,
+bool get_end_half_line(const uchar *buf_start, const uchar *buf_end,
                        uchar ** out_last_line_start, uchar **out_last_line_end,
                        int *have_multi_mines)
 {
-    uchar *p = (uchar*)str_src_end;
-    *out_last_line_end = (uchar*)str_src_end;
+    uchar *p = (uchar*)buf_end;
+    *out_last_line_end = (uchar*)buf_end;
     *have_multi_mines = false;
 
-    while(*p != '\n' && p>str_src_start)
+    while(*p != '\n' && p>buf_start)
     {
         p--;
     }
