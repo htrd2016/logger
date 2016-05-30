@@ -69,6 +69,7 @@ int get_next_line(uchar *szInSrc,
         *src = '\0';
         *nIsFullLine = 1;
     }
+    //*src = '\0';
     (*nLeftStringLength)--;
     pLineEndPos = src;
     return pLineEndPos - (*pOutLineStartPos)+1;

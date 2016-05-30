@@ -29,7 +29,7 @@ int get_args(int argc, char*argv[])
     if(argc!=6)
     {
         printf("path <local port> <thread number> <buffer size(bytes)> <buffer number in block> <block number>\n");
-        return 1;
+        return -1;
     }
 
     configData.local_port = atoi(argv[1]);
@@ -69,7 +69,6 @@ int main(int argc, char *argv[])
     }
 
     int listenq = 1024;
-
     int listenfd, connfd, kdpfd, nfds, n, curfds,acceptCount = 0;
     struct sockaddr_in servaddr, cliaddr;
     socklen_t socklen = sizeof(struct sockaddr_in);
