@@ -21,8 +21,8 @@ extern "C" {
 
 char *get_current_time(char t[]);
 
-int get_line(uchar *szInSrc, int nInSrcLength, uchar **pOutLineStartPos,
-                  int *nLeftStringLength, int *nIsFullLine);
+int get_line(uchar *buffer, int buffer_length, uchar **next_line,
+                  int *remaning_length, int *is_full_line);
 
 bool get_end_half_line(const uchar *str_src_start, const uchar *str_src_end,
                        uchar **out_last_line_start, uchar **out_last_lineEnd,

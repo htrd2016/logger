@@ -12,67 +12,67 @@ params:
 return:
     fist line length
 */
-int get_line(uchar *szInSrc,
-                  int nInSrcLength,
-                  uchar **pOutLineStartPos,
-                  int *nLeftStringLength,
-                  int *nIsFullLine)
+int get_line(uchar *buffer,
+                  int buffer_length,
+                  uchar **next_line,
+                  int *remaning_length,
+                  int *is_full_line)
 {
-    uchar *src = szInSrc;
-    uchar *pLineEndPos = src;
-    *nLeftStringLength = nInSrcLength;
-    *nIsFullLine = 0;
+    uchar *buf = buffer;
+    uchar *pLineEndPos = buf;
+    *remaning_length = buffer_length;
+    *is_full_line = 0;
 
     //获取起始位置
-    while (*src == '\n' || *src == '\r')
+    while (*buf == '\n' || *buf == '\r')
     {
-        if (src-szInSrc>=nInSrcLength)
+        if (buf-buffer>=buffer_length)
         {
-            *pOutLineStartPos = src;//获取起始不为\n或\r的值
-            pLineEndPos = src;
-            *nIsFullLine = 0;
+            *next_line = buf;//获取起始不为\n或\r的值
+            pLineEndPos = buf;
+            *is_full_line = 0;
             return 0;
         }
-        src++;
-        (*nLeftStringLength)--;
+        buf++;
+        (*remaning_length)--;
     }
 
-    if(*src == '\0')
+    if(*buf == '\0')
     {
-        *pOutLineStartPos = src;//获取起始不为\n或\r的值
-        pLineEndPos = src;
-        *nLeftStringLength = 0;
-        *nIsFullLine = 0;
+        *next_line = buf;//获取起始不为\n或\r的值
+        pLineEndPos = buf;
+        *remaning_length = 0;
+        *is_full_line = 0;
         return 0;
     }
 
-    *pOutLineStartPos = src;//获取起始不为\n或\r的值
+    *next_line = buf;//获取起始不为\n或\r的值
 
     //获取结束位置
-    while (*src != '\n' && *src != '\0')
+    while (*buf != '\n' && *buf != '\0')
     {
-        if (src-szInSrc+1>=nInSrcLength)
+        if (buf-buffer+1>=buffer_length)
         {
             break;
         }
 
-        if(*src == '\r')
+        if(*buf == '\r')
         {
-            *src = '\0';
+            *buf = '\0';
         }
-        src++;
-        (*nLeftStringLength)--;
+        buf++;
+        (*remaning_length)--;
     }
 
-    if(*src == '\n')
+    if(*buf == '\n')
     {
-        *src = '\0';
-        *nIsFullLine = 1;
+        *buf = '\0';
+        *is_full_line = 1;
     }
     //*src = '\0';
-    (*nLeftStringLength)--;
-    pLineEndPos = src;
-    return pLineEndPos - (*pOutLineStartPos)+1;
+    (*remaning_length)--;
+    pLineEndPos = buf;
+    return pLineEndPos - (*next_line)+1;
 }
 
 /**
