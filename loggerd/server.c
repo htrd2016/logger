@@ -28,13 +28,13 @@ int get_args(int argc, char*argv[])
 {
     if(argc!=6)
     {
-        printf("path <local port> <thread number> <buffer size(KB)> <buffer number in block> <block number>\n");
+        printf("path <local port> <thread number> <buffer size(bytes)> <buffer number in block> <block number>\n");
         return 1;
     }
 
     configData.local_port = atoi(argv[1]);
     configData.thread_amount = atoi(argv[2]);
-    configData.size_of_buffer = (size_t)atoi(argv[3])*1024*1024;
+    configData.size_of_buffer = (size_t)atoi(argv[3]);
     configData.buffer_amount_in_block = atoi(argv[4]);
     configData.block_amount = atoi(argv[5]);
     return 0;
@@ -372,6 +372,7 @@ ssize_t read_socket_to_recv_buffer(Client *in_client, ThreadData *out_thread_dat
         out_thread_data->recv_buffer = pRecvBuffer;
         out_thread_data->have_data = true;
     }
+    printf("read len=%d\n", nread);
     return nread;
 }
 
