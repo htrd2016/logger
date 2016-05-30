@@ -85,8 +85,13 @@ extern int init_mem();
  * @brief release_mem release all memory and clean the configData
  */
 extern void release_mem();
+/**
+ * @brief get_thread_data get thread data from ThreadData Array
+ * @param index the index of array
+ * @return the pointer to ThreadData
+ */
 extern ThreadData *get_thread_data(int index);
-extern ThreadData *get_one_free_thread_data();
+extern ThreadData *get_free_thread_data();
 extern Block *get_free_block();
 extern Block *get_block(int index);
 

@@ -389,7 +389,7 @@ ssize_t read_socket_to_recv_buffer(Client *in_client, ThreadData *out_thread_dat
 
 int handle(Client *pClient)
 {
-    ThreadData *pThreadData = get_one_free_thread_data();
+    ThreadData *pThreadData = get_free_thread_data();
     if(pThreadData == NULL)
     {
         configData.stop = 1;

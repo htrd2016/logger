@@ -132,7 +132,7 @@ static void init_indicator() {
   }
 }
 
-ThreadData *get_one_free_thread_data() {
+ThreadData *get_free_thread_data() {
   uint32 i = 0;
   for (i = 0; i < configData.thread_amount; i++) {
     if (configData.pThreadData[i].free == true) {
