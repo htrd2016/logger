@@ -16,8 +16,6 @@
 #include "mylog.h"
 #include "parserthread.h"
 
-#define DEBUG
-
 ConfData configData;
 
 static void process_signal(int s);
@@ -371,7 +369,6 @@ ssize_t read_socket_to_recv_buffer(Client *in_client, ThreadData *out_thread_dat
         out_thread_data->recv_buffer = pRecvBuffer;
         out_thread_data->have_data = true;
     }
-    printf("read len=%d\n", nread);
     return nread;
 }
 

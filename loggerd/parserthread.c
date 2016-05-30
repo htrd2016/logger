@@ -27,7 +27,7 @@ void *pasreProc(void *p) {
       uchar *line_start = NULL;
       int is_full_line = false;
       while (true) {
-        int nLength = get_next_line(start, src_left_len, &line_start,
+        int nLength = get_line(start, src_left_len, &line_start,
                                     &src_left_len, &is_full_line);
         if (nLength > 0) {
           char buf[1024];

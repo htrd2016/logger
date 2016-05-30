@@ -12,7 +12,7 @@ params:
 return:
     fist line length
 */
-int get_next_line(uchar *szInSrc,
+int get_line(uchar *szInSrc,
                   int nInSrcLength,
                   uchar **pOutLineStartPos,
                   int *nLeftStringLength,
