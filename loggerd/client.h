@@ -1,28 +1,38 @@
 #ifndef ___CLIENT_H_INCLUDE___
 #define ___CLIENT_H_INCLUDE___
 
+#include <netinet/in.h>
 #include "utils.h"
 #include "types.h"
 
-typedef struct structClient
-{
+typedef struct{
     Block *pBlock;
-	int nPort;
-	char szIP[32];
-    int nfd;
+    int nPort;
+    char szIP[32];
+}ClientData;
+
+typedef struct
+{
+    void* pData;
+    struct sockaddr_in cliaddr;
+    int fd;
     bool free;
-}Client; 
+}EpollClient;
 
 #ifdef __cplusplus
 extern "C" {
 #endif //__cplusplus
 
-extern Client *clients;
+extern EpollClient *clients;
 
-void init_clients();
-void close_clients();
+void init_epoll_clients();
+void close_epoll_clients();
 
-Client *get_one_free_client(Client clients[], int nCount);
+void release_client_datas();
+void init_client_datas();
+
+EpollClient* get_a_free_epoll_client();
+//ClientData *get_one_free_client_data(ClientData clients[], int nCount);
 
 #ifdef __cplusplus
 }

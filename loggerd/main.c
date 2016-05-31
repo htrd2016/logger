@@ -7,8 +7,8 @@
 #include "types.h"
 
 ConfData configData;
-extern int logger_accept(int connfd, struct sockaddr_in* cliaddr, void* in_param, void** out_data);
-extern int handle(int connfd, struct sockaddr_in* cliaddr, void* in_param, void** out_data);
+extern int logger_accept(int connfd, struct sockaddr_in* cliaddr, void** out_data);
+extern int handle(int connfd, struct sockaddr_in* cliaddr, void* in_param);
 
 static int get_args(int argc, char *argv[]) {
   if (argc != 6) {

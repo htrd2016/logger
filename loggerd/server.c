@@ -1,3 +1,5 @@
+#include <glib.h>
+#include <ghash.h>
 #include "server.h"
 #include "client.h"
 #include "mylog.h"
@@ -7,7 +9,9 @@ static void process_signal(int s);
 static void set_signal();
 
 static struct epoll_event *events = 0;
-Client *clients = 0;
+EpollClient *clients = 0;
+
+GHashTable *epoll_hash_table = NULL;
 
 int setnonblocking(int sockfd) {
   if (fcntl(sockfd, F_SETFL, fcntl(sockfd, F_GETFD, 0) | O_NONBLOCK) == -1) {
@@ -16,14 +20,32 @@ int setnonblocking(int sockfd) {
   return 0;
 }
 
+gboolean finder(gpointer key, gpointer value, gpointer user_data){
+    (void)value;
+    return GPOINTER_TO_INT(key) == GPOINTER_TO_INT(user_data);
+}
+
 int server(accept_callback accept_fun, read_callback read_fun) {
   int listenq = 1024;
   int listenfd, connfd, kdpfd, nfds, n, curfds, acceptCount = 0;
   struct sockaddr_in servaddr, cliaddr;
   socklen_t socklen = sizeof(struct sockaddr_in);
   struct epoll_event ev;
+
   events = calloc(1, sizeof(struct epoll_event) * configData.block_amount);
-  init_clients();
+
+  init_epoll_clients();
+  init_client_datas();
+
+//  GHashTable* hash = g_hash_table_new(NULL, NULL);
+//  int *a = (int*)malloc(sizeof(int));
+//  *a = 10;
+//      g_hash_table_insert(hash, 10, GINT_TO_POINTER(a));
+//      printf("The capital of Texas is %d\n", g_hash_table_lookup(hash, 10));
+//      gboolean found = g_hash_table_remove(hash, 10);
+//      g_hash_table_destroy(hash);
+
+  epoll_hash_table = g_hash_table_new(g_direct_hash, g_direct_equal);
 
   bzero(&servaddr, sizeof(servaddr));
   servaddr.sin_family = AF_INET;
@@ -74,7 +96,8 @@ int server(accept_callback accept_fun, read_callback read_fun) {
     memset(&ev, 0, sizeof(ev));
     ev.events = EPOLLIN | EPOLLET;
     ev.data.fd = listenfd;
-    if (epoll_ctl(kdpfd, EPOLL_CTL_ADD, listenfd, &ev) < 0) {
+
+    if (epoll_ctl(kdpfd, EPOLL_CTL_ADD, listenfd, &ev) < 0) {//listenfd:等待连接队列的最大长度
       // fprintf(stderr, "epoll set insertion error: fd=%d\n", listenfd);
       mylog(configData.logfile, L_ERR,
             "epoll set insertion error: fd=%d error(%s)!!", listenfd,
@@ -109,76 +132,96 @@ int server(accept_callback accept_fun, read_callback read_fun) {
     }
     /* 处理所有事件 */
     for (n = 0; n < nfds; ++n) {
-      if (events[n].data.fd == listenfd) {
-        connfd = accept(listenfd, (struct sockaddr *)&cliaddr, &socklen);
-        if (connfd < 0) {
-          perror("accept error");
-          mylog(configData.logfile, L_ERR, "socket accept error(%s)!!",
-                strerror(errno));
-          continue;
+        if (events[n].data.fd == listenfd) {
+            connfd = accept(listenfd, (struct sockaddr *)&cliaddr, &socklen);
+            if (connfd < 0) {
+                perror("accept error");
+                mylog(configData.logfile, L_ERR, "socket accept error(%s)!!",
+                      strerror(errno));
+                continue;
+            }
+
+            ++acceptCount;
+
+            char buf[1024];
+            sprintf(buf, "accept form %s:%d\n", inet_ntoa(cliaddr.sin_addr),
+                    cliaddr.sin_port);
+            printf("%d:%s", acceptCount, buf);
+
+            if (curfds >= (int)configData.block_amount) {
+                fprintf(stderr, "too many connection, more than %d\n",
+                        configData.block_amount);
+
+                mylog(configData.logfile, L_WRN,
+                      "too many connection, more than %d\n", configData.block_amount);
+
+                close(connfd);
+                continue;
+            }
+
+            if (setnonblocking(connfd) < 0) {
+                perror("setnonblocking error");
+                mylog(configData.logfile, L_ERR, "setnonblocking error(%s)",
+                      strerror(errno));
+            }
+
+            {
+                EpollClient* epoll_cleint = get_a_free_epoll_client();
+                if(epoll_cleint == NULL){
+                    mylog(configData.logfile, L_ERR, "can not get a free epoll client");
+                    configData.stop = 1;
+                    break;
+                }
+
+                g_hash_table_insert(epoll_hash_table, GINT_TO_POINTER(connfd), GINT_TO_POINTER(epoll_cleint));
+                epoll_cleint->fd = connfd;
+                memcpy(&epoll_cleint->cliaddr, &cliaddr, sizeof(cliaddr));
+                int result = accept_fun(connfd, &cliaddr, &epoll_cleint->pData);
+                if (result) {
+                    configData.stop = 1;
+                    break;
+                }
+
+                ev.events = EPOLLIN | EPOLLET;
+                ev.data.fd = connfd;
+                if (epoll_ctl(kdpfd, EPOLL_CTL_ADD, connfd, &ev) < 0) {
+                    fprintf(stderr, "add socket '%d' to epoll failed: %s\n", connfd,
+                            strerror(errno));
+                    configData.stop = 1;
+                    mylog(configData.logfile, L_ERR,
+                          "add socket '%d' to epoll failed: %s", connfd,
+                          strerror(errno));
+                    break;
+                }
+            }
+
+            curfds++;
+            continue;
         }
-
-        ++acceptCount;
-
-        char buf[1024];
-        sprintf(buf, "accept form %s:%d\n", inet_ntoa(cliaddr.sin_addr),
-                cliaddr.sin_port);
-        printf("%d:%s", acceptCount, buf);
-
-        if (curfds >= (int)configData.block_amount) {
-          fprintf(stderr, "too many connection, more than %d\n",
-                  configData.block_amount);
-
-          mylog(configData.logfile, L_WRN,
-                "too many connection, more than %d\n", configData.block_amount);
-
-          close(connfd);
-          continue;
-        }
-
-        if (setnonblocking(connfd) < 0) {
-          perror("setnonblocking error");
-          mylog(configData.logfile, L_ERR, "setnonblocking error(%s)",
-                strerror(errno));
-        }
-
+        // 处理客户端请求
+        gpointer pt = g_hash_table_find(epoll_hash_table, (GHRFunc)finder,GINT_TO_POINTER(events[n].data.fd));
+        if(pt == NULL)
         {
-          void *userdata;
-          int result = accept_fun(connfd, &cliaddr, &userdata);
-          if (result) {
+            printf("error to find sock %d\n", events[n].data.fd);
+            mylog(configData.logfile, L_ERR, "EpollClient* epoll_cleint");
             configData.stop = 1;
             break;
-          }
-
-          ev.events = EPOLLIN | EPOLLET;
-          ev.data.ptr = userdata;
-          if (epoll_ctl(kdpfd, EPOLL_CTL_ADD, connfd, &ev) < 0) {
-            fprintf(stderr, "add socket '%d' to epoll failed: %s\n", connfd,
-                    strerror(errno));
-            configData.stop = 1;
-            mylog(configData.logfile, L_ERR,
-                  "add socket '%d' to epoll failed: %s", connfd,
-                  strerror(errno));
-            break;
-          }
         }
-
-        curfds++;
-        continue;
-      }
-      // 处理客户端请求
-      if (read_fun(connfd, &cliaddr, events[n].data.ptr) < 0) {
-        epoll_ctl(kdpfd, EPOLL_CTL_DEL, events[n].data.fd, &ev);
-        curfds--;
-      }
+        EpollClient* epoll_cleint = (EpollClient*)pt;
+        if (read_fun(epoll_cleint->fd, &epoll_cleint->cliaddr, epoll_cleint->pData) < 0) {
+            epoll_ctl(kdpfd, EPOLL_CTL_DEL, events[n].data.fd, &ev);
+            curfds--;
+        }
     }
   }
 
   // wait for all pthread
   close(listenfd);
-  close_clients();
+  close_epoll_clients();
   free(clients);
   free(events);
+  release_client_datas();
+  g_hash_table_destroy(epoll_hash_table);
   return 0;
 }
 

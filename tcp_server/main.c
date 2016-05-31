@@ -10,8 +10,8 @@ ConfData configData;
 int my_accept(int connfd, struct sockaddr_in* cliaddr, void** out_data) {
     (void)connfd;
     (void)cliaddr;
+    (void)out_data;
 
-    *out_data = 1010101;
     printf("Accept a socket %d\n", connfd);
     return (0);
 }
@@ -25,7 +25,7 @@ int echo (int connfd, struct sockaddr_in* cliaddr, void* in_param) {
     memset(buf, 0, 8192);
 
     len = read(connfd, buf, 8192);
-    printf("user data is %d\n", (int)in_param);
+    //printf("user data is %d\n", in_param);
     if (len <=0) {
         printf("client close %d\n", connfd);
         close(connfd);
@@ -45,8 +45,8 @@ int main(int argc, char *argv[])
     }
 
     memset(&configData, 0, sizeof(configData));
-    configData.block_amount = atoi(argv[2]);
     configData.local_port = atoi(argv[1]);
+    configData.block_amount = atoi(argv[2]);
 
     return server(my_accept, echo);
 }

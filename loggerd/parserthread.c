@@ -89,19 +89,19 @@ int create_parse_threads() {
   return 0;
 }
 
-
-
 int logger_accept(int connfd, struct sockaddr_in *cliaddr, void **out_data) {
-  Client *pClient = get_one_free_client(clients, configData.block_amount);
+  EpollClient *pClient = get_a_free_epoll_client(clients, configData.block_amount);
   if (pClient == NULL) {
     configData.stop = 1;
     mylog(configData.logfile, L_ERR, "no more free client to find max=%d",
           configData.block_amount);
     return -1;
   }
-  strcpy(pClient->szIP, inet_ntoa(cliaddr->sin_addr));
-  pClient->nPort = cliaddr->sin_port;
-  pClient->nfd = connfd;
+
+  ClientData *pClientData = (ClientData*)pClient->pData;
+  strcpy(pClientData->szIP, inet_ntoa(cliaddr->sin_addr));
+  pClientData->nPort = cliaddr->sin_port;
+  pClient->fd = connfd;
   pClient->free = false;
 
   Block *pBlock = get_free_block();
@@ -112,7 +112,7 @@ int logger_accept(int connfd, struct sockaddr_in *cliaddr, void **out_data) {
     return -2;
   }
   pBlock->free = false;
-  pClient->pBlock = pBlock;
+  pClientData->pBlock = pBlock;
 
   *out_data = pClient;
 
@@ -121,11 +121,12 @@ int logger_accept(int connfd, struct sockaddr_in *cliaddr, void **out_data) {
 
 
 
-ssize_t read_socket_to_recv_buffer(Client *in_client,
+ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
                                    ThreadData *out_thread_data) {
   out_thread_data->free = false;
-  int connfd = in_client->nfd;
-  Block *block = in_client->pBlock;
+  int connfd = in_client->fd;
+  ClientData *pClientData = (ClientData*)in_client->pData;
+  Block *block = pClientData->pBlock;
   RecvBuffer *pRecvBuffer = get_next_free_recv_buffer(block);
   if (pRecvBuffer == NULL) {
     configData.stop = 1;
@@ -149,7 +150,7 @@ ssize_t read_socket_to_recv_buffer(Client *in_client,
   if (nread == 0) {
     printf("client close the connection\n");
     mylog(configData.logfile, L_INFO, "client close the connection: %s %d",
-          in_client->szIP, in_client->nPort);
+          pClientData->szIP, pClientData->nPort);
     in_client->free = true;
     reset_block(block);
     out_thread_data->free = true;
@@ -220,7 +221,7 @@ int handle(int connfd, struct sockaddr_in *cliaddr, void *in_param) {
   (void)connfd;
   (void)cliaddr;
 
-  Client *pClient = (Client *)in_param;
+  EpollClient *pClient = (EpollClient *)in_param;
   ThreadData *pThreadData = get_free_thread_data();
   if (pThreadData == NULL) {
     configData.stop = 1;

@@ -2,6 +2,8 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <glib.h>
+
 #include "mylog.h"
 #include "types.h"
 #include "utils.h"
@@ -163,7 +165,6 @@ TEST(get_end_half_line, 0) {
   EXPECT_EQ(strcmp((char *)pLineStart, "log0"), 0);
 }
 
-
 TEST(get_end_half_line, 0_1) {
   uchar data[512] = "log0";
   uchar *pLineStart = NULL;
@@ -174,7 +175,7 @@ TEST(get_end_half_line, 0_1) {
   EXPECT_EQ(bRet, true);
   EXPECT_EQ(haveMultiLine, false);
   EXPECT_EQ(pLineStart, data);
-  EXPECT_EQ(strcmp((char *)pLineStart, "log"), 0);
+  EXPECT_EQ(strcmp((char *)pLineStart, "log"), 0);//remark--get_end_half_line没有该表 buffer的值，测试用力有问题
 }
 
 
