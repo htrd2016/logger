@@ -4,6 +4,7 @@
 #include "types.h"
 #include "mylog.h"
 #include "server.h"
+#include "client.h"
 
 ConfData configData;
 
@@ -16,22 +17,22 @@ int my_accept(int connfd, struct sockaddr_in* cliaddr, void** out_data) {
     return (0);
 }
 
-int echo (int connfd, struct sockaddr_in* cliaddr, void* in_param) {
-    (void)cliaddr;
-    (void)in_param;
+int echo (void* in_param) {
+    EpollClient* ec = (EpollClient*)in_param;
 
     char buf[8192];
     int len = 0;
     memset(buf, 0, 8192);
 
-    len = read(connfd, buf, 8192);
+    len = read(ec->fd, buf, 8192);
     //printf("user data is %d\n", in_param);
     if (len <=0) {
-        printf("client close %d\n", connfd);
-        close(connfd);
+        printf("client close %d\n", ec->fd);
+        close(ec->fd);
+        ec->free = true;
     } else {
-        printf("sock %d, len %d: %s\n", connfd, len, buf);
-        write(connfd, buf, len);
+        printf("sock %d, len %d: %s\n", ec->fd, len, buf);
+        write(ec->fd, buf, len);
     }
 
     return (0);

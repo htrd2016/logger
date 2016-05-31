@@ -17,7 +17,7 @@
 
 
 typedef int (*accept_callback) (int connfd, struct sockaddr_in* cliaddr, void** out_data);
-typedef int (*read_callback) (int connfd, struct sockaddr_in* cliaddr, void* in_param);
+typedef int (*read_callback) (void* in_param);
 
 
 #ifdef __cplusplus

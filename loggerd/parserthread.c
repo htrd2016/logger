@@ -217,11 +217,8 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
   return nread;
 }
 
-int handle(int connfd, struct sockaddr_in *cliaddr, void *in_param) {
-  (void)connfd;
-  (void)cliaddr;
-
-  EpollClient *pClient = (EpollClient *)in_param;
+int handle(void *in_param) {
+  EpollClient * pClient = (EpollClient *)in_param;
   ThreadData *pThreadData = get_free_thread_data();
   if (pThreadData == NULL) {
     configData.stop = 1;

@@ -5,8 +5,6 @@ CONFIG -= qt
 
 INCLUDEPATH += ../loggerd
 INCLUDEPATH += /usr/include/glib-2.0/
-INCLUDEPATH += /usr/include/glib-2.0/glib/
-INCLUDEPATH += /usr/lib/x86_64-linux-gnu/glib-2.0/include/
 
 #DEFINES += MACHINE_AMD64
 DEFINES += MACHINE_X86
