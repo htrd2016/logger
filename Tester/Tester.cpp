@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <iostream>
-#include "utils.h"
-#include "types.h"
 #include "mylog.h"
+#include "types.h"
+#include "utils.h"
 
 ConfData configData;
 
@@ -150,165 +150,412 @@ TEST(TestTypedefs, TestTypedefs) {
   free(zero_mem);
 }
 
-TEST(TestgetEndHalfLine, getEndHalfLine0) {
-  uchar szData[512] = "log0";
+TEST(get_end_half_line, 0) {
+  uchar data[512] = "log0";
   uchar *pLineStart = NULL;
   uchar *pLineEnd = NULL;
   int haveMultiLine = 0;
-  bool bRet = get_end_half_line(szData, szData + strlen((char *)szData),
+  bool bRet = get_end_half_line(data, data + strlen((char *)data),
                                 &pLineStart, &pLineEnd, &haveMultiLine);
   EXPECT_EQ(bRet, true);
   EXPECT_EQ(haveMultiLine, false);
-  EXPECT_EQ(pLineStart, szData);
-  EXPECT_EQ(strcmp((char*)pLineStart, "log0"), 0);
+  EXPECT_EQ(pLineStart, data);
+  EXPECT_EQ(strcmp((char *)pLineStart, "log0"), 0);
 }
 
-TEST(TestgetEndHalfLine, getEndHalfLine1) {
-  int haveMultiLine = 0;
-  uchar szData[512] = "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog1";
+
+TEST(get_end_half_line, 0_1) {
+  uchar data[512] = "log0";
   uchar *pLineStart = NULL;
   uchar *pLineEnd = NULL;
-  bool bRet = get_end_half_line(szData, szData + strlen((char *)szData),
+  int haveMultiLine = 0;
+  bool bRet = get_end_half_line(data, data + 2,
                                 &pLineStart, &pLineEnd, &haveMultiLine);
   EXPECT_EQ(bRet, true);
-  EXPECT_EQ(haveMultiLine, true);
-  EXPECT_EQ(pLineStart, szData + strlen((char*)szData) - strlen("log1"));
-  EXPECT_EQ(strcmp((char*)pLineStart, "log1"), 0);
+  EXPECT_EQ(haveMultiLine, false);
+  EXPECT_EQ(pLineStart, data);
+  EXPECT_EQ(strcmp((char *)pLineStart, "log"), 0);
 }
 
 
-TEST(TestgetEndHalfLine, getEndHalfLine2) {
-  uchar szData[512] = "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\n";
+TEST(get_end_half_line, 0_2) {
+  uchar data[512] = "\r\n";
   uchar *pLineStart = NULL;
   uchar *pLineEnd = NULL;
   int haveMultiLine = 0;
-  bool bRet = get_end_half_line(szData, szData + strlen((char *)szData),
+  bool bRet = get_end_half_line(data, data + 2,
+                                &pLineStart, &pLineEnd, &haveMultiLine);
+  EXPECT_EQ(bRet, false);
+  EXPECT_EQ(haveMultiLine, false);
+  EXPECT_EQ(pLineStart, data + 2);
+  EXPECT_EQ(strcmp((char *)pLineStart, ""), 0);
+}
+
+
+TEST(get_end_half_line, 0_3) {
+  uchar data[512] = "\r\n\r\n";
+  uchar *pLineStart = NULL;
+  uchar *pLineEnd = NULL;
+  int haveMultiLine = 0;
+  bool bRet = get_end_half_line(data, data + 2,
                                 &pLineStart, &pLineEnd, &haveMultiLine);
   EXPECT_EQ(bRet, false);
   EXPECT_EQ(haveMultiLine, true);
-  EXPECT_EQ(pLineStart, szData + strlen((char*)szData));
-  EXPECT_EQ(strcmp((char*)pLineStart, ""), 0);
+  EXPECT_EQ(pLineStart, data + 4);
+  EXPECT_EQ(strcmp((char *)pLineStart, ""), 0);
 }
 
-TEST(get_line, get_next_line0) {
+
+TEST(get_end_half_line, 0_4) {
+  uchar data[512] = "\r\n\r";
+  uchar *pLineStart = NULL;
+  uchar *pLineEnd = NULL;
+  int haveMultiLine = 0;
+  bool bRet = get_end_half_line(data, data + 2,
+                                &pLineStart, &pLineEnd, &haveMultiLine);
+  EXPECT_EQ(bRet, false);
+  EXPECT_EQ(haveMultiLine, true);
+  EXPECT_EQ(pLineStart, data + 3);
+  EXPECT_EQ(strcmp((char *)pLineStart, ""), 0);
+}
+
+
+TEST(get_end_half_line, 0_5) {
+  uchar data[512] = "\r\r";
+  uchar *pLineStart = NULL;
+  uchar *pLineEnd = NULL;
+  int haveMultiLine = 0;
+  bool bRet = get_end_half_line(data, data + 2,
+                                &pLineStart, &pLineEnd, &haveMultiLine);
+  EXPECT_EQ(bRet, false);
+  EXPECT_EQ(haveMultiLine, true);
+  EXPECT_EQ(pLineStart, data + 2);
+  EXPECT_EQ(strcmp((char *)pLineStart, ""), 0);
+}
+
+
+TEST(get_end_half_line, 1) {
+  int haveMultiLine = 0;
+  uchar data[512] = "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\n"
+                      "log0\r\nlog0\r\nlog1";
+  uchar *pLineStart = NULL;
+  uchar *pLineEnd = NULL;
+  bool bRet = get_end_half_line(data, data + strlen((char *)data),
+                                &pLineStart, &pLineEnd, &haveMultiLine);
+  EXPECT_EQ(bRet, true);
+  EXPECT_EQ(haveMultiLine, true);
+  EXPECT_EQ(pLineStart, data + strlen((char *)data) - strlen("log1"));
+  EXPECT_EQ(strcmp((char *)pLineStart, "log1"), 0);
+}
+
+TEST(get_end_half_line, 2) {
+  uchar data[512] = "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\n"
+                      "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\n";
+  uchar *pLineStart = NULL;
+  uchar *pLineEnd = NULL;
+  int haveMultiLine = 0;
+  bool bRet = get_end_half_line(data, data + strlen((char *)data),
+                                &pLineStart, &pLineEnd, &haveMultiLine);
+  EXPECT_EQ(bRet, false);
+  EXPECT_EQ(haveMultiLine, true);
+  EXPECT_EQ(pLineStart, data + strlen((char *)data));
+  EXPECT_EQ(strcmp((char *)pLineStart, ""), 0);
+}
+
+TEST(get_end_half_line, 2_0) {
+  uchar data[512] = "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\n"
+                      "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r";
+  uchar *pLineStart = NULL;
+  uchar *pLineEnd = NULL;
+  int haveMultiLine = 0;
+  bool bRet = get_end_half_line(data, data + strlen((char *)data),
+                                &pLineStart, &pLineEnd, &haveMultiLine);
+  EXPECT_EQ(bRet, false);
+  EXPECT_EQ(haveMultiLine, true);
+  EXPECT_EQ(pLineStart, data + strlen((char *)data));
+  EXPECT_EQ(strcmp((char *)pLineStart, ""), 0);
+}
+
+TEST(get_end_half_line, 2_1) {
+  uchar data[512] = "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\n"
+                      "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r";
+  uchar *pLineStart = NULL;
+  uchar *pLineEnd = NULL;
+  int haveMultiLine = 0;
+  bool bRet = get_end_half_line(data, data + 26 - 1,
+                                &pLineStart, &pLineEnd, &haveMultiLine);
+  EXPECT_EQ(bRet, false);
+  EXPECT_EQ(haveMultiLine, true);
+  EXPECT_EQ(pLineStart, data + 25 - 1);
+  EXPECT_EQ(strcmp((char *)pLineStart, "lo"), 0);
+}
+
+
+
+TEST(get_end_half_line, 2_2) {
+  uchar data[512] = "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\n"
+                      "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\n\n\n";
+  uchar *pLineStart = NULL;
+  uchar *pLineEnd = NULL;
+  int haveMultiLine = 0;
+  bool bRet = get_end_half_line(data, data + strlen((char *)data),
+                                &pLineStart, &pLineEnd, &haveMultiLine);
+  EXPECT_EQ(bRet, false);
+  EXPECT_EQ(haveMultiLine, true);
+  EXPECT_EQ(pLineStart, data + strlen((char *)data));
+  EXPECT_EQ(strcmp((char *)pLineStart, ""), 0);
+}
+
+
+TEST(get_end_half_line, 2_3) {
+  uchar data[512] = "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\n"
+                      "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\n\r\n\n";
+  uchar *pLineStart = NULL;
+  uchar *pLineEnd = NULL;
+  int haveMultiLine = 0;
+  bool bRet = get_end_half_line(data, data + strlen((char *)data),
+                                &pLineStart, &pLineEnd, &haveMultiLine);
+  EXPECT_EQ(bRet, false);
+  EXPECT_EQ(haveMultiLine, true);
+  EXPECT_EQ(pLineStart, data + strlen((char *)data));
+  EXPECT_EQ(strcmp((char *)pLineStart, ""), 0);
+}
+
+
+TEST(get_end_half_line, 2_4) {
+  uchar data[512] = "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\n"
+                      "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\n\r\n\r\n";
+  uchar *pLineStart = NULL;
+  uchar *pLineEnd = NULL;
+  int haveMultiLine = 0;
+  bool bRet = get_end_half_line(data, data + strlen((char *)data),
+                                &pLineStart, &pLineEnd, &haveMultiLine);
+  EXPECT_EQ(bRet, false);
+  EXPECT_EQ(haveMultiLine, true);
+  EXPECT_EQ(pLineStart, data + strlen((char *)data));
+  EXPECT_EQ(strcmp((char *)pLineStart, ""), 0);
+}
+
+
+TEST(get_end_half_line, 2_5) {
+  uchar data[512] = "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\n"
+                      "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\n\r\n\r\n\r";
+  uchar *pLineStart = NULL;
+  uchar *pLineEnd = NULL;
+  int haveMultiLine = 0;
+  bool bRet = get_end_half_line(data, data + strlen((char *)data),
+                                &pLineStart, &pLineEnd, &haveMultiLine);
+  EXPECT_EQ(bRet, false);
+  EXPECT_EQ(haveMultiLine, true);
+  EXPECT_EQ(pLineStart, data + strlen((char *)data));
+  EXPECT_EQ(strcmp((char *)pLineStart, ""), 0);
+}
+
+TEST(get_end_half_line, 2_6) {
+  uchar data[512] = "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\n"
+                      "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r\n\r\n\r\n\r\r";
+  uchar *pLineStart = NULL;
+  uchar *pLineEnd = NULL;
+  int haveMultiLine = 0;
+  bool bRet = get_end_half_line(data, data + strlen((char *)data),
+                                &pLineStart, &pLineEnd, &haveMultiLine);
+  EXPECT_EQ(bRet, false);
+  EXPECT_EQ(haveMultiLine, true);
+  EXPECT_EQ(pLineStart, data + strlen((char *)data));
+  EXPECT_EQ(strcmp((char *)pLineStart, ""), 0);
+}
+
+TEST(get_line, 0) {
   int isFullLine = 0;
-  uchar szData[1024] = "May\n 06 19:39:58 hitrade1\r\n Receive Nak";
-  int remaning_length = strlen((char*)szData);
+  uchar data[1024] = "May\n 06 19:39:58 hitrade1\r\n Receive Nak";
+  int remaning_length = strlen((char *)data);
 
   uchar *pLineStart = NULL;
-  int nLen = get_line(szData, remaning_length, &pLineStart,
-                           &remaning_length, &isFullLine);
-  EXPECT_STREQ((char*)pLineStart, "May");
-  EXPECT_EQ(pLineStart, szData);
-  EXPECT_STREQ((char*)pLineStart+nLen, " 06 19:39:58 hitrade1\r\n Receive Nak");
+  uchar* ptr = data;
+  int nLen = get_line(ptr, remaning_length, &pLineStart, &remaning_length,
+                      &isFullLine);
+  EXPECT_STREQ((char *)pLineStart, "May");
+  EXPECT_EQ(pLineStart, ptr);
+  EXPECT_STREQ((char *)pLineStart + nLen,
+               " 06 19:39:58 hitrade1\r\n Receive Nak");
   EXPECT_EQ(nLen, 4);
   EXPECT_EQ(remaning_length, 35);
   EXPECT_EQ(isFullLine, 1);
 
-  nLen = get_line(pLineStart+nLen, remaning_length,
-                       &pLineStart, &remaning_length, &isFullLine);
-  EXPECT_STREQ((char*)pLineStart, " 06 19:39:58 hitrade1");
-  EXPECT_EQ(pLineStart, szData + 3 + 1);
+  ptr += nLen;
+  nLen = get_line(ptr, remaning_length, &pLineStart,
+                  &remaning_length, &isFullLine);
+  EXPECT_STREQ((char *)pLineStart, " 06 19:39:58 hitrade1");
+  EXPECT_EQ(pLineStart, ptr);
   EXPECT_EQ(nLen, 23);
   EXPECT_EQ(remaning_length, 12);
   EXPECT_EQ(isFullLine, 1);
 
-  nLen = get_line(pLineStart+nLen,remaning_length,
-                       &pLineStart, &remaning_length, &isFullLine);
-  EXPECT_STREQ((char*)pLineStart, " Receive Nak");
-  EXPECT_EQ(pLineStart, szData + 3 + 1 + 21 + 2);
+  ptr += nLen;
+  nLen = get_line(ptr, remaning_length, &pLineStart,
+                  &remaning_length, &isFullLine);
+  EXPECT_STREQ((char *)pLineStart, " Receive Nak");
+  EXPECT_EQ(pLineStart, ptr);
   EXPECT_EQ(nLen, 12);
   EXPECT_EQ(remaning_length, 0);
-  EXPECT_EQ(strlen((char*)pLineStart), 12);
+  EXPECT_EQ(strlen((char *)pLineStart), 12);
   EXPECT_EQ(isFullLine, 0);
 
-  nLen = get_line(pLineStart+nLen,remaning_length, &pLineStart, &remaning_length, &isFullLine);
-  EXPECT_STREQ((char*)pLineStart, "");
+  ptr += nLen;
+  nLen = get_line(ptr, remaning_length, &pLineStart,
+                  &remaning_length, &isFullLine);
+  EXPECT_STREQ((char *)pLineStart, "");
   EXPECT_EQ(nLen, 0);
   EXPECT_EQ(remaning_length, 0);
-  EXPECT_EQ(strlen((char*)pLineStart), 0);
+  EXPECT_EQ(strlen((char *)pLineStart), 0);
   EXPECT_EQ(isFullLine, 0);
 }
 
-TEST(get_line, get_next_line1) {
-  int nFullLine = 0;
-  uchar szData[1024] = "May\n 06 19:39:58 hitrade1\r\n Receive Nak";
+TEST(get_line, 0_1) {
+    int isFullLine = 0;
+    uchar data[1024] = "May\r\n 06 19:39:58 hitrade1\r\n\r Receive Nak";
+    int remaning_length = strlen((char *)data);
 
-  uchar *pLineStart = NULL;
-  int remaning_length = strlen((char *)szData);
-  int nLen =
-      get_line(szData, remaning_length, &pLineStart, &remaning_length, &nFullLine);
-  EXPECT_EQ(pLineStart, szData);
-  EXPECT_EQ(nLen, 4);
-  EXPECT_EQ(remaning_length, 35);
-  EXPECT_EQ(strlen((char*)pLineStart)+1, nLen);
-  EXPECT_EQ(nFullLine, 1);
+    uchar *pLineStart = NULL;
+    uchar* ptr = data;
+    int nLen = get_line(ptr, remaning_length, &pLineStart, &remaning_length,
+                        &isFullLine);
+    EXPECT_STREQ((char *)pLineStart, "May");
+    EXPECT_EQ(pLineStart, ptr);
+    EXPECT_STREQ((char *)pLineStart + nLen,
+                 " 06 19:39:58 hitrade1\r\n Receive Nak");
+    EXPECT_EQ(nLen, 4);
+    EXPECT_EQ(remaning_length, 35);
+    EXPECT_EQ(isFullLine, 1);
 
-  pLineStart = pLineStart + nLen;
-  nLen = get_line(pLineStart, remaning_length, &pLineStart, &remaning_length, &nFullLine);
-  EXPECT_STREQ((char *)pLineStart, (char *)szData + 4);
-  EXPECT_EQ(nLen, 23);
-  EXPECT_EQ(remaning_length, 12);
-  EXPECT_EQ(nFullLine, 1);
+    ptr += nLen;
+    nLen = get_line(ptr, remaning_length, &pLineStart,
+                    &remaning_length, &isFullLine);
+    EXPECT_STREQ((char *)pLineStart, " 06 19:39:58 hitrade1");
+    EXPECT_EQ(pLineStart, ptr);
+    EXPECT_EQ(nLen, 23);
+    EXPECT_EQ(remaning_length, 12);
+    EXPECT_EQ(isFullLine, 1);
 
-  pLineStart = pLineStart + nLen;
-  nLen = get_line(pLineStart, remaning_length, &pLineStart, &remaning_length, &nFullLine);
-  EXPECT_STREQ((char *)pLineStart, " Receive Nak");
-  EXPECT_EQ(nLen, 12);
-  EXPECT_EQ(remaning_length, 0);
-  EXPECT_EQ(nFullLine, 0);
+    ptr += nLen;
+    nLen = get_line(ptr, remaning_length, &pLineStart,
+                    &remaning_length, &isFullLine);
+    EXPECT_STREQ((char *)pLineStart, " Receive Nak");
+    EXPECT_EQ(pLineStart, ptr);
+    EXPECT_EQ(nLen, 12);
+    EXPECT_EQ(remaning_length, 0);
+    EXPECT_EQ(strlen((char *)pLineStart), 12);
+    EXPECT_EQ(isFullLine, 0);
+
+    ptr += nLen;
+    nLen = get_line(ptr, remaning_length, &pLineStart,
+                    &remaning_length, &isFullLine);
+    EXPECT_STREQ((char *)pLineStart, "");
+    EXPECT_EQ(nLen, 0);
+    EXPECT_EQ(remaning_length, 0);
+    EXPECT_EQ(strlen((char *)pLineStart), 0);
+    EXPECT_EQ(isFullLine, 0);
 }
 
-TEST(get_line, get_next_line2) {
+TEST(get_line, 1) {
   int nFullLine = 0;
-  uchar szData[1024*2] = "Copyright (c) 2015, Brett824 and Hyphen-ated\n          All rights reserved.\r\n          Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:\n          1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.\r\n          2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.\n          THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS AS IS AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.";
-  int remaning_length = strlen((char *)szData);
+  uchar data[1024 * 2] =
+      "Copyright (c) 2015, Brett824 and Hyphen-ated\n          All rights "
+      "reserved.\r\n          Redistribution and use in source and binary "
+      "forms, with or without modification, are permitted provided that the "
+      "following conditions are met:\n          1. Redistributions of source "
+      "code must retain the above copyright notice, this list of conditions "
+      "and the following disclaimer.\r\n          2. Redistributions in binary "
+      "form must reproduce the above copyright notice, this list of conditions "
+      "and the following disclaimer in the documentation and/or other "
+      "materials provided with the distribution.\n          THIS SOFTWARE IS "
+      "PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS AS IS AND ANY "
+      "EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE "
+      "IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR "
+      "PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR "
+      "CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, "
+      "EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, "
+      "PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR "
+      "PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF "
+      "LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING "
+      "NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS "
+      "SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.";
+  int remaning_length = strlen((char *)data);
 
   uchar *pLineStart = NULL;
-  int nLen = get_line(szData, remaning_length, &pLineStart, &remaning_length, &nFullLine);
-  EXPECT_STREQ((char*)pLineStart, (char*)szData);
-  EXPECT_STREQ((char*)pLineStart, "Copyright (c) 2015, Brett824 and Hyphen-ated");
+  int nLen = get_line(data, remaning_length, &pLineStart, &remaning_length,
+                      &nFullLine);
+  EXPECT_STREQ((char *)pLineStart, (char *)data);
+  EXPECT_STREQ((char *)pLineStart,
+               "Copyright (c) 2015, Brett824 and Hyphen-ated");
   EXPECT_EQ(nLen, 45);
-  EXPECT_EQ(strlen((char*)pLineStart)+1, nLen);
+  EXPECT_EQ(strlen((char *)pLineStart) + 1, nLen);
   EXPECT_EQ(nFullLine, 1);
 
-  nLen = get_line(pLineStart+nLen, remaning_length, &pLineStart, &remaning_length, &nFullLine);
-  EXPECT_STREQ((char*)pLineStart, "          All rights reserved.");
+  nLen = get_line(pLineStart + nLen, remaning_length, &pLineStart,
+                  &remaning_length, &nFullLine);
+  EXPECT_STREQ((char *)pLineStart, "          All rights reserved.");
   EXPECT_EQ(nLen, 32);
-  EXPECT_EQ(strlen((char*)pLineStart)+2, nLen);
+  EXPECT_EQ(strlen((char *)pLineStart) + 2, nLen);
   EXPECT_EQ(nFullLine, 1);
 
-  nLen = get_line(pLineStart+nLen, remaning_length, &pLineStart, &remaning_length, &nFullLine);
-  EXPECT_STREQ((char*)pLineStart, "          Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:");
+  nLen = get_line(pLineStart + nLen, remaning_length, &pLineStart,
+                  &remaning_length, &nFullLine);
+  EXPECT_STREQ((char *)pLineStart, "          Redistribution and use in source "
+                                   "and binary forms, with or without "
+                                   "modification, are permitted provided that "
+                                   "the following conditions are met:");
   EXPECT_EQ(nLen, 153);
-  EXPECT_EQ(strlen((char*)pLineStart)+1, nLen);
+  EXPECT_EQ(strlen((char *)pLineStart) + 1, nLen);
   EXPECT_EQ(nFullLine, 1);
 
-  nLen = get_line(pLineStart+nLen, remaning_length, &pLineStart, &remaning_length, &nFullLine);
-  EXPECT_STREQ((char*)pLineStart, "          1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.");
+  nLen = get_line(pLineStart + nLen, remaning_length, &pLineStart,
+                  &remaning_length, &nFullLine);
+  EXPECT_STREQ((char *)pLineStart, "          1. Redistributions of source "
+                                   "code must retain the above copyright "
+                                   "notice, this list of conditions and the "
+                                   "following disclaimer.");
   EXPECT_EQ(nLen, 139);
-  EXPECT_EQ(strlen((char*)pLineStart)+2, nLen);
+  EXPECT_EQ(strlen((char *)pLineStart) + 2, nLen);
   EXPECT_EQ(nFullLine, 1);
 
-  nLen = get_line(pLineStart+nLen, remaning_length, &pLineStart, &remaning_length, &nFullLine);
-  EXPECT_STREQ((char*)pLineStart, "          2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.");
+  nLen = get_line(pLineStart + nLen, remaning_length, &pLineStart,
+                  &remaning_length, &nFullLine);
+  EXPECT_STREQ((char *)pLineStart,
+               "          2. Redistributions in binary form must reproduce the "
+               "above copyright notice, this list of conditions and the "
+               "following disclaimer in the documentation and/or other "
+               "materials provided with the distribution.");
   EXPECT_EQ(nLen, 216);
-  EXPECT_EQ(strlen((char*)pLineStart)+1, nLen);
+  EXPECT_EQ(strlen((char *)pLineStart) + 1, nLen);
   EXPECT_EQ(nFullLine, 1);
 
-  nLen = get_line(pLineStart+nLen, remaning_length, &pLineStart,
-                       &remaning_length, &nFullLine);
-  EXPECT_STREQ((char*)pLineStart, "          THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS AS IS AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.");
+  nLen = get_line(pLineStart + nLen, remaning_length, &pLineStart,
+                  &remaning_length, &nFullLine);
+  EXPECT_STREQ((char *)pLineStart,
+               "          THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS "
+               "AND CONTRIBUTORS AS IS AND ANY EXPRESS OR IMPLIED WARRANTIES, "
+               "INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF "
+               "MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE "
+               "DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR "
+               "CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, "
+               "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT "
+               "NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; "
+               "LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) "
+               "HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN "
+               "CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR "
+               "OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, "
+               "EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.");
   EXPECT_EQ(nLen, 763);
-  EXPECT_EQ(strlen((char*)pLineStart), nLen);
+  EXPECT_EQ(strlen((char *)pLineStart), nLen);
   EXPECT_EQ(nFullLine, 0);
 
   uchar buf[1024] = "wet\n123456";
   remaning_length = 2;
-  nLen = get_line(buf, remaning_length, &pLineStart,
-                       &remaning_length, &nFullLine);
-  EXPECT_STREQ((char*)pLineStart, "wet\n123456");
+  nLen =
+      get_line(buf, remaning_length, &pLineStart, &remaning_length, &nFullLine);
+  EXPECT_STREQ((char *)pLineStart, "wet\n123456");
   EXPECT_EQ(nLen, 2);
-  EXPECT_EQ(strlen((char*)pLineStart), 10);
+  EXPECT_EQ(strlen((char *)pLineStart), 10);
   EXPECT_EQ(nFullLine, 0);
 }

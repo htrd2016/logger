@@ -12,9 +12,9 @@ LIBS += -lgtest -lgtest_main -lpthread
 SOURCES += \
     Tester.cpp \
     ../loggerd/mylog.c \
+    ../loggerd/parserthread.c \
     ../loggerd/types.c \
-    ../loggerd/utils.c \
-    ../loggerd/parserthread.c
+    ../loggerd/utils.c
 
 HEADERS += \
     ../loggerd/mylog.h \

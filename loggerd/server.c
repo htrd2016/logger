@@ -293,7 +293,7 @@ ssize_t read_socket_to_recv_buffer(Client *in_client, ThreadData *out_thread_dat
         nLeftLength=nLeftLength-(pRecvBuffer->data_end_ptr-pRecvBuffer->buf_start+1);
     }
 
-    pRecvBuffer->buf_end = '\0';
+    *pRecvBuffer->buf_end = '\0';
     uchar *write_ptr = (pRecvBuffer->data_end_ptr==pRecvBuffer->buf_start)?
                 (pRecvBuffer->buf_start):(pRecvBuffer->data_end_ptr+1);
     ssize_t nread = read(connfd, write_ptr, nLeftLength);//读取客户端socket流
