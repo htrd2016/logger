@@ -2,4 +2,5 @@ TEMPLATE = subdirs
 
 SUBDIRS += \
     loggerd \
-    Tester
+    Tester \
+    tcp_server

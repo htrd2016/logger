@@ -11,12 +11,14 @@ SOURCES += \
     parserthread.c \
     server.c \
     types.c \
-    utils.c
+    utils.c \
+    main.c
 
 HEADERS += \
     client.h \
     mylog.h \
     parserthread.h \
     types.h \
-    utils.h
+    utils.h \
+    server.h
 

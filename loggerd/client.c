@@ -1,48 +1,44 @@
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
 #include "client.h"
+#include "types.h"
 
-void init_client(Client *pClient)
-{
-    pClient->pBlock = NULL;
-	pClient->nPort = -1;
-	memset(pClient->szIP, 0, sizeof(pClient->szIP));
-	pClient->nfd = 0;
-    pClient->free = true;
+void init_client(Client *pClient) {
+  pClient->pBlock = NULL;
+  pClient->nPort = -1;
+  memset(pClient->szIP, 0, sizeof(pClient->szIP));
+  pClient->nfd = 0;
+  pClient->free = true;
 }
 
-Client *get_one_free_client(Client clients[], int nCount)
-{
-    int i=0;
-    for (i=0; i<nCount;i++)
-    {
-        Client *pClient = &clients[i];
-        if(pClient->free == true)
-        {
-            return pClient;
-        }
+Client *get_one_free_client(Client clients[], int nCount) {
+  int i = 0;
+  for (i = 0; i < nCount; i++) {
+    Client *pClient = &clients[i];
+    if (pClient->free == true) {
+      return pClient;
     }
-    return NULL;
+  }
+  return NULL;
 }
 
+void init_clients() {
+  uint32 i = 0;
 
-void init_clients(Client client[], int count)
-{
-    int i=0;
-    for(i=0;i<count;i++)
-    {
-        init_client(&client[i]);
-    }
+  clients = calloc(1, configData.block_amount * sizeof(Client));
+
+  for (i = 0; i < configData.block_amount; i++) {
+    init_client(&clients[i]);
+  }
 }
 
-void close_clients(Client client[], int count)
-{
-    int i=0;
-    for (i=0;i<count;i++)
-    {
-        if (client[i].nfd>0 && client[i].free == false)
-        {
-            close(client[i].nfd);
-        }
+void close_clients() {
+  uint32 i = 0;
+  for (i = 0; i < configData.block_amount; i++) {
+    if (clients[i].nfd > 0 && clients[i].free == false) {
+      close(clients[i].nfd);
     }
+  }
 }
