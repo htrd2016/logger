@@ -74,6 +74,7 @@ void *pasreProc(void *p) {
     }
   }
   fclose(file);
+  printf("thread exit ... \n");
   mylog(configData.logfile, L_INFO, "parse thread exit...");
   return 0;
 }

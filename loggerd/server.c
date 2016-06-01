@@ -181,13 +181,17 @@ int server(accept_callback accept_fun, read_callback read_fun) {
     }
   }
 
-  // wait for all pthread
+
+  //stop listen
   close(listenfd);
+  // wait for all pthread
+  sleep(10);
   close_epoll_clients();
+
+  g_hash_table_destroy(epoll_hash_table);
+  release_client_datas();
   free(clients);
   free(events);
-  release_client_datas();
-  g_hash_table_destroy(epoll_hash_table);
   return 0;
 }
 

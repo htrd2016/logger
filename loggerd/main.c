@@ -5,10 +5,11 @@
 #include "parserthread.h"
 #include "server.h"
 #include "types.h"
+#include "client.h"
 
 ConfData configData;
 extern int logger_accept(int connfd, struct sockaddr_in* cliaddr, void** out_data);
-extern int handle(int connfd, struct sockaddr_in* cliaddr, void* in_param);
+extern int handle(void* ec);
 
 static int get_args(int argc, char *argv[]) {
   if (argc != 6) {

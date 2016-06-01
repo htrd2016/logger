@@ -62,9 +62,7 @@ EpollClient* get_a_free_epoll_client(){
 void close_epoll_clients() {
   uint32 i = 0;
   for (i = 0; i < configData.block_amount; i++) {
-    if (clients[i].fd > 0 && clients[i].free == false) {
-      close(clients[i].fd);
-    }
+      if (clients[i].fd > 0) close(clients[i].fd);
   }
 }
 
