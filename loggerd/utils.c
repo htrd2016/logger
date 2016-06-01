@@ -95,6 +95,7 @@ int get_line(uchar *buffer,
   * out_last_line_end:如果要解析的buffer存在半行数据，out_last_line_end指向该半行数据的最后一个字符的地址
   * have_multi_lines:如果要解析的buffer存在多行，*have_multi_lines等于1，否则等于0
   * return:true-存在半行数据，false-不存在半行数据
+  * 用于将最后不完整的一行与完整的行分开，整行存储在一个buffer，半行存储在另外一个buffer里面
 */
 bool get_end_half_line(const uchar *buf_start, const uchar *buf_end,
                        uchar ** out_last_line_start, uchar **out_last_line_end,

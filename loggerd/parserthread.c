@@ -27,7 +27,7 @@ static void *pasreProc(void *);
 void parseLine(const uchar *line_start_ptr, const uchar *line_end_ptr)
 {
     if(line_end_ptr-line_start_ptr<41)
-    {
+    {printf("------(%s)-(%s)", line_start_ptr, line_end_ptr);
         printf("parse line error\n");
         mylog(configData.logfile, L_ERR, "parse line [%s] error,len=%d", line_start_ptr, line_end_ptr-line_start_ptr+1);
 
@@ -174,7 +174,7 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
                          ? (pRecvBuffer->buf_start)
                          : (pRecvBuffer->data_end_ptr + 1);
   ssize_t nread = read(connfd, write_ptr, remaning_length); //读取客户端socket流
-  mylog(configData.logfile, L_ERR, "[%d]len=%d",remaning_length, nread);
+
   if (nread == 0) { //client closed
     printf("client close the connection\n");
     mylog(configData.logfile, L_INFO, "client close the connection: %s %d",
