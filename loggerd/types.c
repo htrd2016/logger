@@ -20,12 +20,12 @@ static void init_thread_data(ThreadData *pThreadData);
 
 int init_mem() {
   if (0 != create_recv_buffer_mem()) {
-    return 1;
+    return -1;
   }
 
   if (0 != create_indicator_mem()) {
     release_memory(configData.recv_data_memory);
-    return 1;
+    return -1;
   }
 
   init_indicator();

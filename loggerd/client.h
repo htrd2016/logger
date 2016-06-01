@@ -25,11 +25,11 @@ extern "C" {
 
 extern EpollClient *clients;
 
-void init_epoll_clients();
+int init_epoll_clients();
 void close_epoll_clients();
 
 void release_client_datas();
-void init_client_datas();
+int init_client_datas();
 
 EpollClient* get_a_free_epoll_client();
 //ClientData *get_one_free_client_data(ClientData clients[], int nCount);

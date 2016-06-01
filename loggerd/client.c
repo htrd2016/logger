@@ -5,14 +5,6 @@
 #include "client.h"
 #include "types.h"
 
-//static void init_client(Client *pClient) {
-//  pClient->pBlock = NULL;
-//  pClient->nPort = -1;
-//  memset(pClient->szIP, 0, sizeof(pClient->szIP));
-//  pClient->nfd = 0;
-//  pClient->free = true;
-//}
-
 static void *client_datas_memory = 0;
 static void init_epoll_client(EpollClient* pEpollClient)
 {
@@ -22,17 +14,26 @@ static void init_epoll_client(EpollClient* pEpollClient)
     memset(&pEpollClient->cliaddr, 0, sizeof(pEpollClient->cliaddr));
 }
 
-void init_epoll_clients() {
+int init_epoll_clients() {
   uint32 i = 0;
   clients = calloc(1, configData.block_amount * sizeof(EpollClient));
+
+  if(clients == 0){
+      return -1;
+  }
 
   for (i = 0; i < configData.block_amount; i++) {
     init_epoll_client(&clients[i]);
   }
+  return 0;
 }
 
-void init_client_datas(){
+int init_client_datas(){
     client_datas_memory = calloc(1, configData.block_amount * sizeof(ClientData));
+    if(client_datas_memory == 0){
+        return -1;
+    }
+
     uint32 i = 0;
     for(i=0;i<configData.block_amount;i++){
         ClientData *client_data = client_datas_memory+i*sizeof(ClientData);
@@ -40,6 +41,7 @@ void init_client_datas(){
         memset(client_data->szIP, 0, 32);
         clients[i].pData = client_data;
     }
+    return 0;
 }
 
 void release_client_datas(){

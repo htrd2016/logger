@@ -42,27 +42,41 @@ int get_line(uchar *buffer,
     *next_line = buf;//获取起始不为\n或\r的值
 
     //获取结束位置
-    while (*buf != '\n' && *buf != '\0')
+    while (*buf != '\n' && *buf != '\0' && *buf != '\r')
     {
         if (buf-buffer+1>=buffer_length)
         {
             break;
         }
-
-        if(*buf == '\r')
-        {
-            *buf = '\0';
-        }
         buf++;
         (*remaning_length)--;
     }
 
-    if(*buf == '\n')
+    if (*buf == '\n' || *buf == '\r')
     {
-        *buf = '\0';
         *is_full_line = 1;
     }
-    //*src = '\0';
+
+   int is_replace_last = 0;
+    while (*buf == '\r' || *buf == '\n')//filter last \r or \n
+    {
+        *buf = '\0';
+        buf++;
+
+        if (buf-buffer+1>=buffer_length)
+        {
+            break;
+        }
+        (*remaning_length)--;
+        is_replace_last = 1;
+    }
+
+    if(is_replace_last==1)
+    {
+        buf--;
+        (*remaning_length)++;
+    }
+
     (*remaning_length)--;
     pLineEndPos = buf;
     return pLineEndPos - (*next_line)+1;
@@ -73,27 +87,59 @@ int get_line(uchar *buffer,
 */
 bool get_end_half_line(const uchar *buf_start, const uchar *buf_end,
                        uchar ** out_last_line_start, uchar **out_last_line_end,
-                       int *have_multi_mines)
+                       int *have_multi_lines)
 {
     uchar *p = (uchar*)buf_end;
     *out_last_line_end = (uchar*)buf_end;
-    *have_multi_mines = false;
+    *out_last_line_start = (uchar*)buf_end;
+    *have_multi_lines = 0;
 
-    while(*p != '\n' && p>buf_start)
+    if(buf_end-buf_start+1<=3)
+    {
+        if((char)*buf_start == '\r'
+                && (char)*(buf_start+1) == '\r')
+        {
+            *have_multi_lines = 1;
+            return false;
+        }
+        if(buf_end-buf_start+1==3)
+        {
+            if((char)*buf_start == '\r' && (char)*(buf_start+1) == '\n' && (char)*(buf_end) == '\0')
+            {
+                  return false;
+            }
+        }
+        char *headtmp = (char*)buf_end;
+        while((char)*headtmp != '\n'
+              && (char)*headtmp!='\r'
+              && (char*)headtmp>(char*)buf_start)
+        {
+            headtmp--;
+        }
+        if((char)*headtmp == '\n' || (char)*headtmp=='\r')
+        {
+            headtmp++;
+        }
+        *out_last_line_start = (uchar*)headtmp;
+        return true;
+    }
+
+    while(*p != '\n' && *p != '\r' && p>buf_start)
     {
         p--;
     }
 
-    if(*p == '\n')
+    if((*p == '\n' || *p == '\r') && p != buf_end)
     {
         p++;
-        *have_multi_mines = true;
+        *have_multi_lines = true;
     }
 
     *out_last_line_start = p;
     if(*out_last_line_end==*out_last_line_start
             &&**out_last_line_end!='\0'
-            &&**out_last_line_end!='\n')//just one char
+            &&**out_last_line_end!='\n'
+            &&**out_last_line_end!='\r')//just one char
     {
         return true;
     }

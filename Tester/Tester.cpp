@@ -175,9 +175,11 @@ TEST(get_end_half_line, 0_1) {
   EXPECT_EQ(bRet, true);
   EXPECT_EQ(haveMultiLine, false);
   EXPECT_EQ(pLineStart, data);
-  EXPECT_EQ(strcmp((char *)pLineStart, "log"), 0);//remark--get_end_half_line没有该表 buffer的值，测试用力有问题
-}
 
+  //*****不能对最后一位后面的一位改为'\0',否则有可能指针溢出，正确的测试用力应该如下***
+  EXPECT_EQ(strcmp((char *)pLineStart, "log"), 0);
+  EXPECT_EQ(strcmp((char *)pLineStart, "log0"), 0);
+}
 
 TEST(get_end_half_line, 0_2) {
   uchar data[512] = "\r\n";
@@ -198,7 +200,7 @@ TEST(get_end_half_line, 0_3) {
   uchar *pLineStart = NULL;
   uchar *pLineEnd = NULL;
   int haveMultiLine = 0;
-  bool bRet = get_end_half_line(data, data + 2,
+  bool bRet = get_end_half_line(data, data + 4,
                                 &pLineStart, &pLineEnd, &haveMultiLine);
   EXPECT_EQ(bRet, false);
   EXPECT_EQ(haveMultiLine, true);
@@ -212,7 +214,7 @@ TEST(get_end_half_line, 0_4) {
   uchar *pLineStart = NULL;
   uchar *pLineEnd = NULL;
   int haveMultiLine = 0;
-  bool bRet = get_end_half_line(data, data + 2,
+  bool bRet = get_end_half_line(data, data + 3,
                                 &pLineStart, &pLineEnd, &haveMultiLine);
   EXPECT_EQ(bRet, false);
   EXPECT_EQ(haveMultiLine, true);
@@ -285,10 +287,14 @@ TEST(get_end_half_line, 2_1) {
   int haveMultiLine = 0;
   bool bRet = get_end_half_line(data, data + 26 - 1,
                                 &pLineStart, &pLineEnd, &haveMultiLine);
-  EXPECT_EQ(bRet, false);
+  EXPECT_EQ(bRet, true);
   EXPECT_EQ(haveMultiLine, true);
   EXPECT_EQ(pLineStart, data + 25 - 1);
+
+  //**不能对最后一位后面的一位改为'\0',否则有可能指针溢出，正确的测试用力应该如下:**
   EXPECT_EQ(strcmp((char *)pLineStart, "lo"), 0);
+  EXPECT_EQ(strcmp((char *)pLineStart, "log0\r\nlog0\r\nlog0\r\n"
+                                       "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r"), 0);
 }
 
 
@@ -424,9 +430,9 @@ TEST(get_line, 0_1) {
     EXPECT_STREQ((char *)pLineStart, "May");
     EXPECT_EQ(pLineStart, ptr);
     EXPECT_STREQ((char *)pLineStart + nLen,
-                 " 06 19:39:58 hitrade1\r\n Receive Nak");
-    EXPECT_EQ(nLen, 4);
-    EXPECT_EQ(remaning_length, 35);
+                 " 06 19:39:58 hitrade1\r\n\r Receive Nak");
+    EXPECT_EQ(nLen, 5);
+    EXPECT_EQ(remaning_length, 36);
     EXPECT_EQ(isFullLine, 1);
 
     ptr += nLen;
@@ -434,7 +440,7 @@ TEST(get_line, 0_1) {
                     &remaning_length, &isFullLine);
     EXPECT_STREQ((char *)pLineStart, " 06 19:39:58 hitrade1");
     EXPECT_EQ(pLineStart, ptr);
-    EXPECT_EQ(nLen, 23);
+    EXPECT_EQ(nLen, 24);
     EXPECT_EQ(remaning_length, 12);
     EXPECT_EQ(isFullLine, 1);
 

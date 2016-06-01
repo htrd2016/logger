@@ -30,9 +30,10 @@ void *pasreProc(void *p) {
   threadIndex++;
   int nThreadID = threadIndex;
   ThreadData *pThreadData = (ThreadData *)p;
-  char fileName[120];
-  sprintf(fileName, "./log%d.txt", threadIndex);
-  FILE *file = fopen(fileName, "a+");
+//  char fileName[120];
+//  sprintf(fileName, "./log%d.txt", threadIndex);
+//  FILE *file = fopen(fileName, "a+");
+
   while (!configData.stop) {
     if (pThreadData->have_data == true) {
       pThreadData->free = false;
@@ -50,10 +51,10 @@ void *pasreProc(void *p) {
           memcpy(buf, line_start, nLength);
           buf[nLength] = '\0';
           strcat(buf, "\n");
-          static int lineId = 1;
-          fwrite(buf, strlen(buf), 1, file);
-          fflush(file);
-          lineId++;
+//          static int lineId = 1;
+//          fwrite(buf, strlen(buf), 1, file);
+//          fflush(file);
+          //lineId++;
         }
 
         if (src_left_len == 0) {
@@ -73,9 +74,10 @@ void *pasreProc(void *p) {
       usleep(1);
     }
   }
-  fclose(file);
+  //fclose(file);
   printf("thread exit ... \n");
   mylog(configData.logfile, L_INFO, "parse thread exit...");
+  pthread_detach(pthread_self());
   return 0;
 }
 
@@ -91,7 +93,7 @@ int create_parse_threads() {
 }
 
 int logger_accept(int connfd, struct sockaddr_in *cliaddr, void **out_data) {
-  EpollClient *pClient = get_a_free_epoll_client(clients, configData.block_amount);
+  EpollClient *pClient = (EpollClient*)(*out_data);//get_a_free_epoll_client(clients, configData.block_amount);
   if (pClient == NULL) {
     configData.stop = 1;
     mylog(configData.logfile, L_ERR, "no more free client to find max=%d",
@@ -115,7 +117,7 @@ int logger_accept(int connfd, struct sockaddr_in *cliaddr, void **out_data) {
   pBlock->free = false;
   pClientData->pBlock = pBlock;
 
-  *out_data = pClient;
+  //*out_data = pClient;
 
   return (0);
 }
@@ -148,7 +150,7 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
                          ? (pRecvBuffer->buf_start)
                          : (pRecvBuffer->data_end_ptr + 1);
   ssize_t nread = read(connfd, write_ptr, nLeftLength); //读取客户端socket流
-  if (nread == 0) {
+  if (nread == 0) { //client closed
     printf("client close the connection\n");
     mylog(configData.logfile, L_INFO, "client close the connection: %s %d",
           pClientData->szIP, pClientData->nPort);
@@ -156,10 +158,10 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
     reset_block(block);
     out_thread_data->free = true;
 
-    return -1;
+    return 0;
   }
 
-  if (nread < 0 && errno != EINTR) {
+  if (nread < 0 && errno != EINTR) {//read error
     perror("read error");
     close(connfd);
     in_client->free = true;

@@ -11,8 +11,6 @@ static void set_signal();
 static struct epoll_event *events = 0;
 EpollClient *clients = 0;
 
-GHashTable *epoll_hash_table = NULL;
-
 int setnonblocking(int sockfd) {
   if (fcntl(sockfd, F_SETFL, fcntl(sockfd, F_GETFD, 0) | O_NONBLOCK) == -1) {
     return -1;
@@ -26,11 +24,23 @@ int server(accept_callback accept_fun, read_callback read_fun) {
   struct sockaddr_in servaddr, cliaddr;
   socklen_t socklen = sizeof(struct sockaddr_in);
   struct epoll_event ev;
+  GHashTable *epoll_hash_table = NULL;
 
   events = calloc(1, sizeof(struct epoll_event) * configData.block_amount);
+  if(events == 0){
+      mylog(configData.logfile, L_ERR, "calloc events memory failed!");
+      configData.stop = 1;
+  }
 
-  init_epoll_clients();
-  init_client_datas();
+  if(0!=init_epoll_clients()){
+      mylog(configData.logfile, L_ERR, "calloc epoll clients memory failed!");
+      configData.stop = 1;
+  }
+
+  if(0!=init_client_datas()){
+      mylog(configData.logfile, L_ERR, "calloc client data memory failed!");
+      configData.stop = 1;
+  }
 
   epoll_hash_table = g_hash_table_new(g_direct_hash, g_direct_equal);
 
@@ -59,7 +69,7 @@ int server(accept_callback accept_fun, read_callback read_fun) {
   if (!configData.stop) {
     if (bind(listenfd, (struct sockaddr *)&servaddr, sizeof(struct sockaddr)) ==
         -1) {
-      // perror("bind error");
+      perror("bind error");
       mylog(configData.logfile, L_ERR, "socket bind error(%s)!!",
             strerror(errno));
       configData.stop = 1;
@@ -120,8 +130,10 @@ int server(accept_callback accept_fun, read_callback read_fun) {
                 "too many connection, more than %d\n", configData.block_amount);
 
           close(connfd);
+          --acceptCount;
           continue;
         }
+
 
         if (setnonblocking(connfd) < 0) {
           mylog(configData.logfile, L_ERR, "setnonblocking error(%s)",
@@ -138,13 +150,18 @@ int server(accept_callback accept_fun, read_callback read_fun) {
             break;
           }
 
-          g_hash_table_insert(epoll_hash_table, GINT_TO_POINTER(connfd),
+          gboolean b = g_hash_table_insert(epoll_hash_table, GINT_TO_POINTER(connfd),
                               GINT_TO_POINTER(epoll_client));
+          if(b == FALSE){
+              mylog(configData.logfile, L_ERR, "g_hash_table_insert failed!");
+              configData.stop = 1;
+              break;
+          }
           epoll_client->fd = connfd;
           epoll_client->free = false;
 
           memcpy(&epoll_client->cliaddr, &cliaddr, sizeof(cliaddr));
-          int result = accept_fun(connfd, &cliaddr, &epoll_client->pData);
+          int result = accept_fun(connfd, &cliaddr, (void**)&epoll_client);
           if (result) {
             configData.stop = 1;
             break;
