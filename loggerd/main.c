@@ -12,9 +12,9 @@ extern int logger_accept(int connfd, struct sockaddr_in* cliaddr, void** out_dat
 extern int handle(void* ec);
 
 static int get_args(int argc, char *argv[]) {
-  if (argc != 6) {
+  if (argc != 7) {
     printf("path <local port> <thread number> <buffer size(bytes)> <buffer "
-           "number in block> <block number>\n");
+           "number in block> <block number> <log path>\n");
     return -1;
   }
 
@@ -23,6 +23,7 @@ static int get_args(int argc, char *argv[]) {
   configData.size_of_buffer = (size_t)atoi(argv[3]);
   configData.buffer_amount_in_block = atoi(argv[4]);
   configData.block_amount = atoi(argv[5]);
+  strcpy(configData.logfile, argv[6]);
   return 0;
 }
 

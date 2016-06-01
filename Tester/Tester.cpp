@@ -177,7 +177,7 @@ TEST(get_end_half_line, 0_1) {
   EXPECT_EQ(pLineStart, data);
 
   //*****不能对最后一位后面的一位改为'\0',否则有可能指针溢出，正确的测试用力应该如下***
-  EXPECT_EQ(strcmp((char *)pLineStart, "log"), 0);
+  //EXPECT_EQ(strcmp((char *)pLineStart, "log"), 0);
   EXPECT_EQ(strcmp((char *)pLineStart, "log0"), 0);
 }
 
@@ -292,7 +292,7 @@ TEST(get_end_half_line, 2_1) {
   EXPECT_EQ(pLineStart, data + 25 - 1);
 
   //**不能对最后一位后面的一位改为'\0',否则有可能指针溢出，正确的测试用力应该如下:**
-  EXPECT_EQ(strcmp((char *)pLineStart, "lo"), 0);
+  //EXPECT_EQ(strcmp((char *)pLineStart, "lo"), 0);
   EXPECT_EQ(strcmp((char *)pLineStart, "log0\r\nlog0\r\nlog0\r\n"
                                        "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r"), 0);
 }

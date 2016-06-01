@@ -24,6 +24,34 @@
 
 static void *pasreProc(void *);
 
+void parseLine(const uchar *line_start_ptr, const uchar *line_end_ptr)
+{
+    if(line_end_ptr-line_start_ptr<41)
+    {
+        printf("parse line error\n");
+        mylog(configData.logfile, L_ERR, "parse line [%s] error,len=%d", line_start_ptr, line_end_ptr-line_start_ptr+1);
+
+        return;
+    }
+
+    uchar* start = (uchar*)line_start_ptr;
+    uchar t[16];
+    memcpy(t ,start, 15);
+    t[15] = '\0';
+    printf("time=%s ", t);
+
+    start = start+16;
+    char info[30];
+    memcpy(info, start, 25);
+    info[25] = '\0';
+    printf("%s ", info);
+
+    start = start+26;
+    char detail[1024];
+    memcpy(detail, start, (char*)line_end_ptr-(char*)start+1);
+    detail[(char*)line_end_ptr-(char*)start+1] = '\0';
+    printf("%s\n", detail);
+}
 
 void *pasreProc(void *p) {
   static int threadIndex = 0;
@@ -38,26 +66,24 @@ void *pasreProc(void *p) {
     if (pThreadData->have_data == true) {
       pThreadData->free = false;
       uchar *start = pThreadData->recv_buffer->data_start_ptr;
-      int src_left_len = pThreadData->recv_buffer->data_end_ptr -
+      int remaning_length = pThreadData->recv_buffer->data_end_ptr -
                          pThreadData->recv_buffer->data_start_ptr + 1;
 
       uchar *line_start = NULL;
       int is_full_line = false;
       while (true) {
-        int nLength = get_line(start, src_left_len, &line_start,
-                                    &src_left_len, &is_full_line);
+        int nLength = get_line(start, remaning_length, &line_start,
+                                    &remaning_length, &is_full_line);
         if (nLength > 0) {
-          char buf[1024];
-          memcpy(buf, line_start, nLength);
-          buf[nLength] = '\0';
-          strcat(buf, "\n");
+            parseLine(line_start, line_start+nLength-1);
+//          strcat(buf, "\n");
 //          static int lineId = 1;
 //          fwrite(buf, strlen(buf), 1, file);
 //          fflush(file);
           //lineId++;
         }
 
-        if (src_left_len == 0) {
+        if (remaning_length == 0) {
           pThreadData->recv_buffer->data_end_ptr =
               pThreadData->recv_buffer->data_start_ptr;
           pThreadData->recv_buffer->free = true;
@@ -122,8 +148,6 @@ int logger_accept(int connfd, struct sockaddr_in *cliaddr, void **out_data) {
   return (0);
 }
 
-
-
 ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
                                    ThreadData *out_thread_data) {
   out_thread_data->free = false;
@@ -139,17 +163,18 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
     return -1;
   }
 
-  ssize_t nLeftLength = configData.size_of_buffer - 1;
+  ssize_t remaning_length = configData.size_of_buffer;
   if (pRecvBuffer->data_end_ptr != pRecvBuffer->buf_start) {
-    nLeftLength =
-        nLeftLength - (pRecvBuffer->data_end_ptr - pRecvBuffer->buf_start + 1);
+    remaning_length =
+        remaning_length - (pRecvBuffer->data_end_ptr - pRecvBuffer->buf_start + 1);
   }
 
-  *pRecvBuffer->buf_end = '\0';
+  //*pRecvBuffer->buf_end = '\0';
   uchar *write_ptr = (pRecvBuffer->data_end_ptr == pRecvBuffer->buf_start)
                          ? (pRecvBuffer->buf_start)
                          : (pRecvBuffer->data_end_ptr + 1);
-  ssize_t nread = read(connfd, write_ptr, nLeftLength); //读取客户端socket流
+  ssize_t nread = read(connfd, write_ptr, remaning_length); //读取客户端socket流
+  mylog(configData.logfile, L_ERR, "[%d]len=%d",remaning_length, nread);
   if (nread == 0) { //client closed
     printf("client close the connection\n");
     mylog(configData.logfile, L_INFO, "client close the connection: %s %d",
