@@ -192,6 +192,9 @@ int server(accept_callback accept_fun, read_callback read_fun) {
             curfds--;
             ec->free = true;
             HASH_DEL(hhash, ec);
+
+            printf("client %d close\n", events[n].data.fd);
+            mylog(configData.logfile, L_INFO, "client %d close\n", events[n].data.fd);
           }
         }
       }
