@@ -134,9 +134,7 @@ TEST(get_end_half_line, 0_1) {
   EXPECT_EQ(haveMultiLine, false);
   EXPECT_EQ(pLineStart, data);
 
-  //*****不能对最后一位后面的一位改为'\0',否则有可能指针yuejie，正确的测试用力应该如下***
-  // EXPECT_EQ(strcmp((char *)pLineStart, "log"), 0);
-  EXPECT_EQ(strcmp((char *)pLineStart, "log0"), 0);
+  EXPECT_EQ(pLineEnd-pLineStart+1, 3);
 }
 
 TEST(get_end_half_line, 0_2) {
@@ -245,12 +243,7 @@ TEST(get_end_half_line, 2_1) {
   EXPECT_EQ(haveMultiLine, true);
   EXPECT_EQ(pLineStart, data + 25 - 1);
 
-  //**不能对最后一位后面的一位改为'\0',否则有可能指针溢出，正确的测试用力应该如下:**
-  // EXPECT_EQ(strcmp((char *)pLineStart, "lo"), 0);
-  EXPECT_EQ(strcmp((char *)pLineStart,
-                   "log0\r\nlog0\r\nlog0\r\n"
-                   "log0\r\nlog0\r\nlog0\r\nlog0\r\nlog0\r"),
-            0);
+  EXPECT_EQ(pLineEnd-pLineStart+1, 2);
 }
 
 TEST(get_end_half_line, 2_2) {
@@ -265,6 +258,7 @@ TEST(get_end_half_line, 2_2) {
   EXPECT_EQ(haveMultiLine, true);
   EXPECT_EQ(pLineStart, data + strlen((char *)data));
   EXPECT_EQ(strcmp((char *)pLineStart, ""), 0);
+  EXPECT_EQ(pLineStart, pLineEnd);
 }
 
 TEST(get_end_half_line, 2_3) {
@@ -279,6 +273,7 @@ TEST(get_end_half_line, 2_3) {
   EXPECT_EQ(haveMultiLine, true);
   EXPECT_EQ(pLineStart, data + strlen((char *)data));
   EXPECT_EQ(strcmp((char *)pLineStart, ""), 0);
+  EXPECT_EQ(pLineStart, pLineEnd);
 }
 
 TEST(get_end_half_line, 2_4) {
@@ -293,6 +288,7 @@ TEST(get_end_half_line, 2_4) {
   EXPECT_EQ(haveMultiLine, true);
   EXPECT_EQ(pLineStart, data + strlen((char *)data));
   EXPECT_EQ(strcmp((char *)pLineStart, ""), 0);
+  EXPECT_EQ(pLineStart, pLineEnd);
 }
 
 TEST(get_end_half_line, 2_5) {
@@ -307,6 +303,7 @@ TEST(get_end_half_line, 2_5) {
   EXPECT_EQ(haveMultiLine, true);
   EXPECT_EQ(pLineStart, data + strlen((char *)data));
   EXPECT_EQ(strcmp((char *)pLineStart, ""), 0);
+  EXPECT_EQ(pLineStart, pLineEnd);
 }
 
 TEST(get_end_half_line, 2_6) {
@@ -321,6 +318,7 @@ TEST(get_end_half_line, 2_6) {
   EXPECT_EQ(haveMultiLine, true);
   EXPECT_EQ(pLineStart, data + strlen((char *)data));
   EXPECT_EQ(strcmp((char *)pLineStart, ""), 0);
+  EXPECT_EQ(pLineStart, pLineEnd);
 }
 
 TEST(get_line, 0) {

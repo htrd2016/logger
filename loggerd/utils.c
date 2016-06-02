@@ -85,12 +85,6 @@ int get_line(uchar *buffer,
         (*remaning_length)++;
     }
 
-    if((*remaning_length) == 1)
-    {
-        int j=0;
-        j++;
-    }
-
     (*remaning_length)--;
     pLineEndPos = buf;
     return pLineEndPos - (*next_line)+1;
