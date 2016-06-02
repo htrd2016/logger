@@ -213,6 +213,9 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
 
       if (nread == 0) {
           //EOF ，说明客户端发来了FIN；
+          if(total_read_len == 0){
+              return 0;
+          }
           break;
       }
 

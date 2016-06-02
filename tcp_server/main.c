@@ -36,6 +36,9 @@ int echo (void* in_param) {
             return -1;
         }
         else if(len == 0){
+            if(readLen == 0){
+                return 0;
+            }
             break;
         }
 
