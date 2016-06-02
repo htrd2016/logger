@@ -192,6 +192,8 @@ int server(accept_callback accept_fun, read_callback read_fun) {
           if (read_fun(pt) < 0) {
             epoll_ctl(kdpfd, EPOLL_CTL_DEL, events[n].data.fd, &ev);
             curfds--;
+            close(((EpollClient*)pt)->fd);
+            ((EpollClient*)pt)->free = true;
           }
         }
       }
