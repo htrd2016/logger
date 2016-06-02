@@ -118,8 +118,11 @@ int create_parse_threads() {
   return 0;
 }
 
-int logger_accept(int connfd, struct sockaddr_in *cliaddr, void **out_data) {
-  EpollClient *pClient = (EpollClient*)(*out_data);//get_a_free_epoll_client(clients, configData.block_amount);
+int logger_accept(int connfd, struct sockaddr_in *cliaddr, void **in_data) {
+  ClientData *pClientData = 0;
+  Block *pBlock = 0;
+  EpollClient *pClient = (EpollClient*)(*in_data);
+
   if (pClient == NULL) {
     configData.stop = 1;
     mylog(configData.logfile, L_ERR, "no more free client to find max=%d",
@@ -127,13 +130,13 @@ int logger_accept(int connfd, struct sockaddr_in *cliaddr, void **out_data) {
     return -1;
   }
 
-  ClientData *pClientData = (ClientData*)pClient->pData;
+  pClientData = (ClientData*)pClient->pData;
   strcpy(pClientData->szIP, inet_ntoa(cliaddr->sin_addr));
   pClientData->nPort = cliaddr->sin_port;
   pClient->fd = connfd;
   pClient->free = false;
 
-  Block *pBlock = get_free_block();
+  pBlock = get_free_block();
   if (pBlock == NULL) {
     configData.stop = 1;
     mylog(configData.logfile, L_ERR, "no more free b block find max=%d",
@@ -188,8 +191,6 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
 
   if (nread < 0 && errno != EINTR) {//read error
     perror("read error");
-    close(connfd);
-    in_client->free = true;
     reset_block(block);
     out_thread_data->free = true;
     return -1;

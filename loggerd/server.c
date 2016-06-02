@@ -164,6 +164,8 @@ int server(accept_callback accept_fun, read_callback read_fun) {
           int result = accept_fun(connfd, &cliaddr, (void**)&epoll_client);
           if (result) {
             configData.stop = 1;
+            close(connfd);
+            epoll_client->free = true;
             break;
           }
 
@@ -190,9 +192,9 @@ int server(accept_callback accept_fun, read_callback read_fun) {
           break;
         } else {
           if (read_fun(pt) < 0) {
+            close(((EpollClient*)pt)->fd);
             epoll_ctl(kdpfd, EPOLL_CTL_DEL, events[n].data.fd, &ev);
             curfds--;
-            close(((EpollClient*)pt)->fd);
             ((EpollClient*)pt)->free = true;
           }
         }
