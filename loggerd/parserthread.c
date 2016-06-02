@@ -27,9 +27,9 @@ static void *pasreProc(void *);
 //May 06 19:51:20 hitrade1 tkernel 1[1667]: XTPPub SubjectID=0X1001, Flow Size=21798, PublishPort: 21798
 void parseLine(const uchar *line_start_ptr, const uchar *line_end_ptr)
 {
-    uchar t[16];
     char* start = NULL;
-    char info[30];
+    char *tail = NULL;
+//    char info[30];
     char detail[1024];
 
     if(line_end_ptr-line_start_ptr<41)
@@ -45,16 +45,14 @@ void parseLine(const uchar *line_start_ptr, const uchar *line_end_ptr)
     }
 
     start = (char*)line_start_ptr;
-
-    memcpy(t ,start, 15);
-    t[15] = '\0';
-    printf("time=%s ", t);
+    tail = start+15;
+    *tail = '\0';
+    printf("time=%s ", start);
 
     start = start+16;
-
-    memcpy(info, start, 25);
-    info[25] = '\0';
-    printf("%s ", info);
+    tail = start+25;
+    *tail = '\0';
+    printf("%s ", start);
 
     start = start+26;
     memcpy(detail, start, (char*)line_end_ptr-(char*)start+1);
