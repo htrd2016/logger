@@ -2,10 +2,17 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <arpa/inet.h>
+
+#include <unistd.h>
+#include <signal.h>
 
 #include "mylog.h"
 #include "memtypes.h"
 #include "utils.h"
+
+#define MSG_MAX_LENGTH 8192
+#define SIG_USER 14
 
 ConfData configData;
 
@@ -519,12 +526,95 @@ TEST(get_line, 1) {
   EXPECT_EQ(nFullLine, 0);
 }
 
+void sigUserProc(int)
+{
+     int status;
+     wait(&status); //接收子进程退出
+}
 
 TEST(server_Connection, 1) {
     ///!!! MOST IMPORTANT !!!///
     //before you start test, MUST change this path to correct your server's path
     //
-    char servpath[] = "/home/sean/projects/htrd2016/logger/build/gcc/debug/tcp_server";
+    int i=0;
+//    char servpath[] = "/home/yang/workspace/logger/tcp_server/tcp_server";
     short port = 12345;
 
+//    char str_port[10];
+//    char str_client_number[10];
+
+//    int pid, ppid;
+
+//    int ret;
+    char server_ip[] = "127.0.0.1";
+    int client_number = 10;
+    char send_buf[MSG_MAX_LENGTH] = "msg";
+    char recv_buf[MSG_MAX_LENGTH];
+
+    ssize_t recv_length = 0;
+    ssize_t sended_out_length = 0;
+    int *socks;
+
+//    char *exec_argv[2];
+
+//    sprintf(str_port, "%d", port);
+//    sprintf(str_client_number, "%d", client_number);
+
+//    exec_argv[0] = str_port;
+//    exec_argv[1] = str_client_number;
+
+//    signal(SIG_USER, sigUserProc);
+//    pid = fork();
+//    ppid = getpid();
+//    if(pid == 0)
+//    {
+//        ret = execv(servpath, exec_argv);
+//        kill(ppid, SIG_USER);
+//        return;
+//    }
+
+//    EXPECT_NE(ret, -1);
+//    if(ret == -1)
+//    {
+//        return;
+//    }
+
+//    sleep(10);
+
+    struct sockaddr_in remote_addr; // 服务器端网络地址结构体
+    memset(&remote_addr,0,sizeof(remote_addr)); // 数据初始化--清零
+    remote_addr.sin_family=AF_INET; // 设置为IP通信
+    remote_addr.sin_addr.s_addr=inet_addr(server_ip);// 服务器IP地址
+    remote_addr.sin_port=htons(port); // 服务器端口号
+
+    socks = new int[client_number];
+    for(;i<client_number;i++)
+    {
+        socks[i] = socket(AF_INET,SOCK_STREAM,0);
+        EXPECT_GT(socks[i], 0);
+
+        if(socks[i]>0)
+        {
+            int ret = connect(socks[i],(struct sockaddr *)&remote_addr,sizeof(struct sockaddr));
+            EXPECT_EQ(ret, 0);
+            if (ret == 0)
+            {
+                sended_out_length = send(socks[i], send_buf, MSG_MAX_LENGTH, 0);
+                recv_length = recv(socks[i], recv_buf, MSG_MAX_LENGTH, 0);
+                EXPECT_EQ(sended_out_length, MSG_MAX_LENGTH);
+                EXPECT_EQ(recv_length, MSG_MAX_LENGTH);
+                EXPECT_STREQ(recv_buf, send_buf);
+            }
+        }
+    }
+
+    for(i=0; i<client_number; i++)
+    {
+        if(socks[i]>0)
+        {
+            close(socks[i]);
+        }
+    }
+
+    delete []socks;
 }

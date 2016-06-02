@@ -203,7 +203,6 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
         remaning_length - (pRecvBuffer->data_end_ptr - pRecvBuffer->buf_start + 1);
   }
 
-  //*pRecvBuffer->buf_end = '\0';
   write_ptr = (pRecvBuffer->data_end_ptr == pRecvBuffer->buf_start)
                          ? (pRecvBuffer->buf_start)
                          : (pRecvBuffer->data_end_ptr + 1);
@@ -212,7 +211,7 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
   {
       nread = read(connfd, write_prt_tmp, remaning_length); //读取客户端socket流
 
-      if (nread == 0) { //client closed
+      if (nread == 0) {
           //EOF ，说明客户端发来了FIN；
           break;
       }

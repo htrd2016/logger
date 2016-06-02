@@ -23,16 +23,28 @@ int echo (void* in_param) {
     char buf[8192];
     int len = 0;
     memset(buf, 0, 8192);
+    char *ptr = buf;
+    ssize_t readLen = 0;
+    ssize_t remaning_length = 8192;
 
-    len = read(ec->fd, buf, 8192);
-    //printf("user data is %d\n", in_param);
-    if (len <=0) {
-        printf("read error %d\n", ec->fd);
-        return -1;
-    } else {
-        printf("sock %d, len %d: %s\n", ec->fd, len, buf);
-        write(ec->fd, buf, len);
+    while(remaning_length>0)
+    {
+        len = read(ec->fd, ptr, remaning_length);
+        //printf("user data is %d\n", in_param);
+        if (len <0 && errno != EINTR) {
+            printf("read error %d (%d)\n", ec->fd, errno);
+            return -1;
+        }
+        else if(len == 0){
+            break;
+        }else {
+            remaning_length-=len;
+            readLen += len;
+            ptr += (int)len;
+        }
     }
+    printf("sock %d, len %d: %s\n", ec->fd, (int)readLen, buf);
+    write(ec->fd, buf, readLen);
 
     return (0);
 }
