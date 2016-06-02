@@ -4,7 +4,6 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 INCLUDEPATH += ../loggerd
-INCLUDEPATH += /usr/include/glib-2.0/
 
 #DEFINES += MACHINE_AMD64
 DEFINES += MACHINE_X86

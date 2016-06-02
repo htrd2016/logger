@@ -5,7 +5,7 @@ CONFIG -= qt
 
 INCLUDEPATH += /usr/include/glib-2.0
 
-LIBS += -L/usr/lib -lm -lglib-2.0
+LIBS += -lm
 LIBS += -lpthread
 
 SOURCES += \

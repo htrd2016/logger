@@ -2,7 +2,6 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <glib.h>
 
 #include "mylog.h"
 #include "memtypes.h"

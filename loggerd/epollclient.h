@@ -4,6 +4,7 @@
 #include <netinet/in.h>
 #include "utils.h"
 #include "memtypes.h"
+#include "uthash.h"
 
 typedef struct{
     Block *pBlock;
@@ -17,6 +18,7 @@ typedef struct
     struct sockaddr_in cliaddr;
     int fd;
     bool free;
+    UT_hash_handle hh;
 }EpollClient;
 
 #ifdef __cplusplus

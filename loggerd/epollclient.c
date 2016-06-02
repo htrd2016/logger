@@ -6,6 +6,8 @@
 #include "memtypes.h"
 
 static void *client_datas_memory = 0;
+EpollClient* epoll_clients = 0;
+
 static void init_epoll_client(EpollClient* pEpollClient)
 {
     pEpollClient->free = true;
