@@ -518,17 +518,14 @@ TEST(get_line, 1) {
   EXPECT_EQ(nFullLine, 0);
 }
 
-void sigUserProc(int) {
-  int status;
-  wait(&status); //接收子进程退出
-}
-
+// void sigUserProc(int) {
+//  int status;
+//  wait(&status); //接收子进程退出
+//}
 
 #ifdef __CLANG__
 namespace testing {
-    std::string Message::GetString() const {
-        return "";
-    }
+std::string Message::GetString() const { return ""; }
 }
 #endif //__CLANG__
 
@@ -649,4 +646,100 @@ TEST(server_Connection, 4) {
 TEST(server_Connection, 5) {
   for (int i = 0; i < 20; i++)
     Test_Connection(10);
+}
+
+typedef struct thread_param { uint8_t id; } thread_param;
+
+static int bad[10];
+
+void *TcpClient(void *param) {
+  //    char servpath[] = "/home/yang/workspace/logger/tcp_server/tcp_server";
+  short port = 12345;
+
+  char server_ip[] = "127.0.0.1";
+  char send_buf[MSG_MAX_LENGTH] = "msg";
+  char recv_buf[MSG_MAX_LENGTH];
+
+  ssize_t recv_length = 0;
+  ssize_t sended_out_length = 0;
+  int sockfd = 0;
+
+  struct sockaddr_in remote_addr;
+  memset(&remote_addr, 0, sizeof(remote_addr));
+  remote_addr.sin_family = AF_INET;
+  remote_addr.sin_addr.s_addr = inet_addr(server_ip);
+  remote_addr.sin_port = htons(port);
+
+  bad[((thread_param *)param)->id] = 0;
+  memset(recv_buf, ((thread_param *)param)->id, MSG_MAX_LENGTH);
+
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  EXPECT_GT(sockfd, 0);
+  if (sockfd <= 0)
+    goto bad_return;
+
+  if (sockfd > 0) {
+    int ret = connect(sockfd, (struct sockaddr *)&remote_addr,
+                      sizeof(struct sockaddr));
+    EXPECT_EQ(ret, 0);
+    if (ret == 0) {
+      sended_out_length = send(sockfd, send_buf, MSG_MAX_LENGTH, 0);
+      recv_length = recv(sockfd, recv_buf, MSG_MAX_LENGTH, 0);
+
+      ret = (sended_out_length == MSG_MAX_LENGTH);
+      EXPECT_NE(ret, 0);
+      if (!ret)
+        goto bad_return;
+
+      ret = (recv_length == MSG_MAX_LENGTH);
+      EXPECT_NE(ret, 0);
+      if (!ret)
+        goto bad_return;
+
+      ret = memcmp(recv_buf, send_buf, MSG_MAX_LENGTH);
+      EXPECT_EQ(ret, 0);
+      if (ret)
+        goto bad_return;
+
+      sended_out_length = send(sockfd, send_buf, MSG_MAX_LENGTH, 0);
+      recv_length = recv(sockfd, recv_buf, MSG_MAX_LENGTH, 0);
+      ret = (sended_out_length == MSG_MAX_LENGTH);
+      EXPECT_NE(ret, 0);
+      if (!ret)
+        goto bad_return;
+
+      ret = (recv_length == MSG_MAX_LENGTH);
+      EXPECT_NE(ret, 0);
+      if (!ret)
+        goto bad_return;
+
+      ret = memcmp(recv_buf, send_buf, MSG_MAX_LENGTH);
+      EXPECT_EQ(ret, 0);
+      if (ret)
+        goto bad_return;
+    } else
+      goto bad_return;
+  }
+
+  close(sockfd);
+  return (0);
+bad_return:
+  bad[((thread_param *)param)->id] = 1;
+  close(sockfd);
+  return (0);
+}
+
+TEST(TcpClient, 1) {
+  thread_param param[10];
+  for (int i = 0; i < 10; i++) {
+    param[i].id = (uint8_t)i;
+    pthread_t t;
+    int ret = pthread_create(&t, 0, TcpClient, param + 1);
+    EXPECT_EQ(ret, 0);
+  }
+
+  sleep(10);
+
+  for (int i = 0; i < 10; i++)
+    EXPECT_EQ(bad[i], 0);
 }

@@ -22,39 +22,16 @@ int echo (void* in_param) {
 
     char buf[8192];
     int len = 0;
-    memset(buf, 0, 8192);
-    char *ptr = buf;
-    ssize_t readLen = 0;
-    ssize_t remaning_length = 8192;
-
-    while(remaning_length>0)
-    {
-        len = read(ec->fd, ptr, remaning_length);
-        //printf("user data is %d\n", in_param);
-        if (len <0 && errno != EINTR) {
-            printf("read error %d (%d)\n", ec->fd, errno);
-            return -1;
-        }
-        else if(len == 0){
-            if(readLen == 0){
-                return 0;
-            }
-            break;
-        }
-
-        if(len<remaning_length){
-            readLen = len;
-            break;
-        }
-
-        remaning_length-=len;
-        readLen += len;
-        ptr += (int)len;
+    len = read(ec->fd, buf, 8192);
+    //printf("user data is %d\n", in_param);
+    if (len <= 0 && errno != EINTR) {
+        printf("read error %d (%d)\n", ec->fd, errno);
+        return -1;
     }
-    printf("sock %d, len %d: %s\n", ec->fd, (int)readLen, buf);
-    int wn = write(ec->fd, buf, readLen);
-
-    return wn;
+    printf("sock %d, len %d\n", ec->fd, len);
+    len = write(ec->fd, buf, len);
+    if (len < 0) return -1;
+    return 0;
 }
 
 int main(int argc, char *argv[])
@@ -67,6 +44,6 @@ int main(int argc, char *argv[])
     memset(&configData, 0, sizeof(configData));
     configData.local_port = atoi(argv[1]);
     configData.block_amount = atoi(argv[2]);
-
+    strcpy(configData.logfile, "/home/sean/tcpserver.log");
     return server(my_accept, echo);
 }
