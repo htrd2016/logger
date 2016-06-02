@@ -5,8 +5,8 @@ CONFIG -= qt
 
 INCLUDEPATH += ../loggerd
 
-#DEFINES += MACHINE_AMD64
-DEFINES += MACHINE_X86
+#for clang compiler, disable this line when using non-clang, like gcc
+#DEFINES += __CLANG__
 
 LIBS += -lgtest -lgtest_main -lpthread
 SOURCES += \

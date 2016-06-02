@@ -52,9 +52,9 @@ int echo (void* in_param) {
         ptr += (int)len;
     }
     printf("sock %d, len %d: %s\n", ec->fd, (int)readLen, buf);
-    write(ec->fd, buf, readLen);
+    int wn = write(ec->fd, buf, readLen);
 
-    return (0);
+    return wn;
 }
 
 int main(int argc, char *argv[])

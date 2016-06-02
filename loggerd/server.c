@@ -19,14 +19,14 @@ int setnonblocking(int sockfd) {
 
 int server(accept_callback accept_fun, read_callback read_fun) {
   int listenq = 1024;
-  int listenfd, connfd, kdpfd, nfds, n, curfds, acceptCount = 0;
+  int listenfd, connfd, kdpfd = 0, nfds, n, curfds, acceptCount = 0;
   struct sockaddr_in servaddr, cliaddr;
   socklen_t socklen = sizeof(struct sockaddr_in);
   struct epoll_event ev;
 
   hhash = 0;
 
-  events = calloc(1, sizeof(struct epoll_event) * configData.block_amount);
+  events = calloc(1, sizeof(struct epoll_event) * (configData.block_amount + 1));
   if (events == 0) {
     mylog(configData.logfile, L_ERR, "calloc events memory failed!");
     configData.stop = 1;
@@ -168,7 +168,6 @@ int server(accept_callback accept_fun, read_callback read_fun) {
             break;
           }
 
-          printf("Hash add %d\n", epoll_client->fd);
           HASH_ADD_INT(hhash, fd, epoll_client);
         }
 
@@ -188,7 +187,6 @@ int server(accept_callback accept_fun, read_callback read_fun) {
                     || (events[n].events & EPOLLERR)
                     || (events[n].events & EPOLLHUP)
                     || read_fun(ec) < 0){
-            fprintf(stderr, "epoll error\n");
             close(ec->fd);
             epoll_ctl(kdpfd, EPOLL_CTL_DEL, events[n].data.fd, &ev);
             curfds--;
