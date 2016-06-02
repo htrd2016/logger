@@ -158,7 +158,7 @@ int server(accept_callback accept_fun, read_callback read_fun) {
             break;
           }
 
-          ev.events = EPOLLIN | EPOLLET;
+          ev.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP;
           ev.data.fd = connfd;
           if (epoll_ctl(kdpfd, EPOLL_CTL_ADD, connfd, &ev) < 0) {
             mylog(configData.logfile, L_ERR,
@@ -182,8 +182,12 @@ int server(accept_callback accept_fun, read_callback read_fun) {
           configData.stop = 1;
           break;
         } else {
-          if ((events[n].events & EPOLLERR) || (events[n].events & EPOLLHUP) ||
-              (!(events[n].events & EPOLLIN)) || read_fun(ec) < 0) {
+          /*if ((events[n].events & EPOLLERR) || (events[n].events & EPOLLHUP) ||
+              (!(events[n].events & EPOLLIN)) || read_fun(ec) < 0)*/
+            if((events[n].events & EPOLLRDHUP)
+                    || (events[n].events & EPOLLERR)
+                    || (events[n].events & EPOLLHUP)
+                    || read_fun(ec) < 0){
             fprintf(stderr, "epoll error\n");
             close(ec->fd);
             epoll_ctl(kdpfd, EPOLL_CTL_DEL, events[n].data.fd, &ev);

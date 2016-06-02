@@ -37,11 +37,16 @@ int echo (void* in_param) {
         }
         else if(len == 0){
             break;
-        }else {
-            remaning_length-=len;
-            readLen += len;
-            ptr += (int)len;
         }
+
+        if(len<remaning_length){
+            readLen = len;
+            break;
+        }
+
+        remaning_length-=len;
+        readLen += len;
+        ptr += (int)len;
     }
     printf("sock %d, len %d: %s\n", ec->fd, (int)readLen, buf);
     write(ec->fd, buf, readLen);
