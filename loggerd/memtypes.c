@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "types.h"
+#include "memtypes.h"
 #include "utils.h"
 
 static void init_indicator();

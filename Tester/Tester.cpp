@@ -5,7 +5,7 @@
 #include <glib.h>
 
 #include "mylog.h"
-#include "types.h"
+#include "memtypes.h"
 #include "utils.h"
 
 ConfData configData;

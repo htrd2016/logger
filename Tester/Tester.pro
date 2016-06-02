@@ -13,11 +13,11 @@ LIBS += -lgtest -lgtest_main -lpthread
 SOURCES += \
     Tester.cpp \
     ../loggerd/mylog.c \
-    ../loggerd/types.c \
+    ../loggerd/memtypes.c \
     ../loggerd/utils.c
 
 HEADERS += \
     ../loggerd/mylog.h \
-    ../loggerd/types.h \
+    ../loggerd/memtypes.h \
     ../loggerd/utils.h
 

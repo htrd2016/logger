@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "types.h"
+#include "memtypes.h"
 #include "mylog.h"
 #include "server.h"
 #include "epollclient.h"
