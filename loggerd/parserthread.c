@@ -17,48 +17,61 @@
 #include <sys/socket.h>
 
 #include "parserthread.h"
-#include "types.h"
+#include "memtypes.h"
 #include "mylog.h"
 #include "utils.h"
-#include "client.h"
+#include "epollclient.h"
 
 static void *pasreProc(void *);
 
-//May 06 19:51:00 hitrade1 tkernel 1[1667]: TradeSize 0
+//May 06 19:51:20 hitrade1 tkernel 1[1667]: XTPPub SubjectID=0X1001, Flow Size=21798, PublishPort: 21798
 void parseLine(const uchar *line_start_ptr, const uchar *line_end_ptr)
 {
-    if (line_end_ptr-line_start_ptr<41)
+    uchar t[16];
+    char* start = NULL;
+    char info[30];
+    char detail[1024];
+
+    if(line_end_ptr-line_start_ptr<41)
     {
-        printf("------(%s)-(%s)", line_start_ptr, line_end_ptr);
-        mylog(configData.logfile, L_ERR, "parse line [%s] error,len=%d", line_start_ptr, line_end_ptr-line_start_ptr+1);
+        char buf[1024];
+        memcpy(buf, line_start_ptr, line_end_ptr-line_start_ptr+1);
+        buf[line_end_ptr-line_start_ptr+1] = '\0';
+        printf("------(%s)", buf);
+        printf("parse line error\n");
+        mylog(configData.logfile, L_ERR, "parse line [%s] error,len=%d", buf);
 
         return;
     }
 
-    uchar* start = (uchar*)line_start_ptr;
-    uchar t[16];
+    start = (char*)line_start_ptr;
+
     memcpy(t ,start, 15);
     t[15] = '\0';
     printf("time=%s ", t);
 
     start = start+16;
-    char info[30];
+
     memcpy(info, start, 25);
     info[25] = '\0';
     printf("%s ", info);
 
     start = start+26;
-    char detail[1024];
     memcpy(detail, start, (char*)line_end_ptr-(char*)start+1);
     detail[(char*)line_end_ptr-(char*)start+1] = '\0';
     printf("%s\n", detail);
 }
 
 void *pasreProc(void *p) {
-  static int threadIndex = 0;
-  threadIndex++;
-  int nThreadID = threadIndex;
-  ThreadData *pThreadData = (ThreadData *)p;
+    ThreadData *pThreadData = NULL;
+    static int threadIndex = 0;
+    threadIndex++;
+    int nThreadID = threadIndex;
+    pThreadData = (ThreadData *)p;
+    uchar *buffer_start = NULL;
+    uchar *line_start = NULL;
+    int is_full_line = false;
+
 //  char fileName[120];
 //  sprintf(fileName, "./log%d.txt", threadIndex);
 //  FILE *file = fopen(fileName, "a+");
@@ -66,30 +79,23 @@ void *pasreProc(void *p) {
   while (!configData.stop) {
     if (pThreadData->have_data == true) {
       pThreadData->free = false;
-      uchar *start = pThreadData->recv_buffer->data_start_ptr;
+      buffer_start = pThreadData->recv_buffer->data_start_ptr;
       int remaning_length = pThreadData->recv_buffer->data_end_ptr -
-                         pThreadData->recv_buffer->data_start_ptr + 1+ 1;
+                         pThreadData->recv_buffer->data_start_ptr + 1;
 
-      uchar *line_start = NULL;
-      int is_full_line = false;
       while (true) {
-        int nLength = get_line(start, remaning_length, &line_start,
+        int nLength = get_line(buffer_start, remaning_length, &line_start,
                                     &remaning_length, &is_full_line);
         if (nLength > 0) {
             parseLine(line_start, line_start+nLength-1);
-//          strcat(buf, "\n");
-//          static int lineId = 1;
-//          fwrite(buf, strlen(buf), 1, file);
-//          fflush(file);
-          //lineId++;
         }
-
-        if(nLength<=0)
-            stop;
-
-        start = line_start + nLength;
-
-        if (remaning_length == 0) {
+        else if(nLength<0)
+        {
+            mylog(configData.logfile, L_ERR, "get_line return %d", nLength);
+            configData.stop = 1;
+            break;
+        }
+        else if (remaning_length == 0) {
           pThreadData->recv_buffer->data_end_ptr =
               pThreadData->recv_buffer->data_start_ptr;
           pThreadData->recv_buffer->free = true;
@@ -99,6 +105,7 @@ void *pasreProc(void *p) {
           mylog(configData.logfile, L_INFO, "thread %d pasre over", nThreadID);
           break;
         }
+        buffer_start = line_start + nLength;
       }
     } else {
       // printf("free!!!\n");
@@ -123,8 +130,11 @@ int create_parse_threads() {
   return 0;
 }
 
-int logger_accept(int connfd, struct sockaddr_in *cliaddr, void **out_data) {
-  EpollClient *pClient = (EpollClient*)(*out_data);//get_a_free_epoll_client(clients, configData.block_amount);
+int logger_accept(int connfd, struct sockaddr_in *cliaddr, void **in_data) {
+  ClientData *pClientData = 0;
+  Block *pBlock = 0;
+  EpollClient *pClient = (EpollClient*)(*in_data);
+
   if (pClient == NULL) {
     configData.stop = 1;
     mylog(configData.logfile, L_ERR, "no more free client to find max=%d",
@@ -132,13 +142,13 @@ int logger_accept(int connfd, struct sockaddr_in *cliaddr, void **out_data) {
     return -1;
   }
 
-  ClientData *pClientData = (ClientData*)pClient->pData;
+  pClientData = (ClientData*)pClient->pData;
   strcpy(pClientData->szIP, inet_ntoa(cliaddr->sin_addr));
   pClientData->nPort = cliaddr->sin_port;
   pClient->fd = connfd;
   pClient->free = false;
 
-  Block *pBlock = get_free_block();
+  pBlock = get_free_block();
   if (pBlock == NULL) {
     configData.stop = 1;
     mylog(configData.logfile, L_ERR, "no more free b block find max=%d",
@@ -148,18 +158,36 @@ int logger_accept(int connfd, struct sockaddr_in *cliaddr, void **out_data) {
   pBlock->free = false;
   pClientData->pBlock = pBlock;
 
-  //*out_data = pClient;
-
   return (0);
 }
 
 ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
                                    ThreadData *out_thread_data) {
+
+  ClientData *pClientData;
+  Block *block;
+  ssize_t remaning_length;
+  RecvBuffer *pRecvBuffer;
+  int connfd;
+  uchar *write_ptr;
+  size_t read_len = 0;
+  ssize_t nread;
+
+  uchar *tail_line_start = NULL;
+  uchar *tail_line_end = NULL;
+  int have_full_line = 0;
+  bool have_half_line;
+  size_t copy_len;
+
+  RecvBuffer *second_recv_buffer;
+
   out_thread_data->free = false;
-  int connfd = in_client->fd;
-  ClientData *pClientData = (ClientData*)in_client->pData;
-  Block *block = pClientData->pBlock;
-  RecvBuffer *pRecvBuffer = get_next_free_recv_buffer(block);
+  connfd = in_client->fd;
+
+  pClientData = (ClientData*)in_client->pData;
+  block = pClientData->pBlock;
+
+  pRecvBuffer = get_next_free_recv_buffer(block);
   if (pRecvBuffer == NULL) {
     configData.stop = 1;
     mylog(configData.logfile, L_ERR, "get free recvbuffer failed!!");
@@ -168,59 +196,66 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
     return -1;
   }
 
-  ssize_t remaning_length = configData.size_of_buffer;
+  remaning_length = configData.size_of_buffer;
   if (pRecvBuffer->data_end_ptr != pRecvBuffer->buf_start) {
     remaning_length =
         remaning_length - (pRecvBuffer->data_end_ptr - pRecvBuffer->buf_start + 1);
   }
 
   //*pRecvBuffer->buf_end = '\0';
-  uchar *write_ptr = (pRecvBuffer->data_end_ptr == pRecvBuffer->buf_start)
+  write_ptr = (pRecvBuffer->data_end_ptr == pRecvBuffer->buf_start)
                          ? (pRecvBuffer->buf_start)
                          : (pRecvBuffer->data_end_ptr + 1);
-  ssize_t nread = read(connfd, write_ptr, remaning_length); //读取客户端socket流
+  while(remaning_length>0)
+  {
+      nread = read(connfd, write_ptr, remaning_length); //读取客户端socket流
 
-  if (nread == 0 errno====) { //client closed
-    printf("client close the connection\n");
-    mylog(configData.logfile, L_INFO, "client close the connection: %s %d",
-          pClientData->szIP, pClientData->nPort);
-    in_client->free = true;
-    reset_block(block);
-    out_thread_data->free = true;
+      if (nread == 0) { //client closed
+          //    printf("client close the connection\n");
+          //    mylog(configData.logfile, L_INFO, "client close the connection: %s %d",
+          //          pClientData->szIP, pClientData->nPort);
+          //    in_client->free = true;
+          //    reset_block(block);
+          //    out_thread_data->free = true;
 
-    return 0;
+          //EOF ，说明客户端发来了FIN；
+          break;
+      }
+
+      if (nread < 0 && errno != EINTR) {//read error
+          perror("read error");
+          reset_block(block);
+          out_thread_data->free = true;
+          return -1;
+      }
+
+      if(nread<remaning_length)
+      {
+          read_len = nread;
+          break;
+      }
+
+      write_ptr += (int)nread;
+      remaning_length -= nread;
+      read_len += nread;
   }
 
-  if (nread < 0 && errno != EINTR) {//read error
-    perror("read error");
-    del ==close(connfd);
-    del ==in_client->free = true;
-    reset_block(block);
-    out_thread_data->free = true;
-    return -1;
-  }
+  have_half_line = get_end_half_line(pRecvBuffer->buf_start, write_ptr + read_len - 1,
+                        &tail_line_start, &tail_line_end, &have_full_line);
 
-  uchar *tail_line_start = NULL;
-  uchar *tail_line_end = NULL;
-  int have_multi_line = 0;
-  bool have_half_line =
-      get_end_half_line(pRecvBuffer->buf_start, write_ptr + nread,
-                        &tail_line_start, &tail_line_end, &have_multi_line);
-
-  //can shu ming xiu gai
   // 1.one harf line "111111"
-  if (have_multi_line == 0 && have_half_line == true) {
-    pRecvBuffer->data_end_ptr = write_ptr + nread - 1;
+  if (have_full_line == 0 && have_half_line == true) {
+    pRecvBuffer->data_end_ptr = write_ptr + read_len - 1;
     out_thread_data->free = true;
     return 0;
   }
   // 2.one or more full lines "111\r\n2222\r\n"
-  else if (have_multi_line == 1 && have_half_line == false) {
+  else if (have_full_line == 1 && have_half_line == false) {
     block->bufIndexToWrite++;
     if (block->bufIndexToWrite >= configData.buffer_amount_in_block) {
       block->bufIndexToWrite = 0;
     }
-    pRecvBuffer->data_end_ptr = write_ptr + nread - 1;
+    pRecvBuffer->data_end_ptr = write_ptr + read_len - 1;
     out_thread_data->recv_buffer = pRecvBuffer;
     out_thread_data->have_data = true;
   }
@@ -231,7 +266,7 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
       block->bufIndexToWrite = 0;
     }
 
-    RecvBuffer *second_recv_buffer = get_next_free_recv_buffer(block);
+    second_recv_buffer = get_next_free_recv_buffer(block);
     if (second_recv_buffer == NULL) {
       printf("no more free recv buffer to get!!");
       mylog(configData.logfile, L_ERR, "no more free recv buffer to get!!");
@@ -239,23 +274,23 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
       out_thread_data->free = true;
       return -1;
     }
-    printf("%s\n", tail_line_start);
-    size_t copy_len = tail_line_end - tail_line_start + 1;
+    copy_len = tail_line_end - tail_line_start + 1;
     memcpy(second_recv_buffer->data_start_ptr, tail_line_start, copy_len);
     second_recv_buffer->data_end_ptr =
         second_recv_buffer->data_end_ptr + copy_len - 1;
-    memset(tail_line_start, copy_len, 0);
-    *tail_line_start = '\0';
-    pRecvBuffer->data_end_ptr = pRecvBuffer->data_end_ptr + nread - copy_len;
+    memset(tail_line_start, 0, copy_len);
+    *tail_line_start = '\n';
+    pRecvBuffer->data_end_ptr = pRecvBuffer->data_end_ptr + read_len - copy_len;
     out_thread_data->recv_buffer = pRecvBuffer;
     out_thread_data->have_data = true;
   }
-  return nread;
+  return read_len;
 }
 
 int handle(void *in_param) {
   EpollClient * pClient = (EpollClient *)in_param;
   ThreadData *pThreadData = get_free_thread_data();
+
   if (pThreadData == NULL) {
     configData.stop = 1;
     mylog(configData.logfile, L_ERR, "can not find free thread!!\n");

@@ -9,19 +9,19 @@ LIBS += -L/usr/lib -lm -lglib-2.0
 LIBS += -lpthread
 
 SOURCES += \
-    client.c \
     mylog.c \
     parserthread.c \
     server.c \
-    types.c \
     utils.c \
-    main.c
+    main.c \
+    memtypes.c \
+    epollclient.c
 
 HEADERS += \
-    client.h \
     mylog.h \
     parserthread.h \
-    types.h \
     utils.h \
-    server.h
+    server.h \
+    memtypes.h \
+    epollclient.h
 

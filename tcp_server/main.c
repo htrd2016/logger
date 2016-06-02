@@ -27,9 +27,8 @@ int echo (void* in_param) {
     len = read(ec->fd, buf, 8192);
     //printf("user data is %d\n", in_param);
     if (len <=0) {
-        printf("client close %d\n", ec->fd);
-        close(ec->fd);
-        ec->free = true;
+        printf("read error %d\n", ec->fd);
+        return -1;
     } else {
         printf("sock %d, len %d: %s\n", ec->fd, len, buf);
         write(ec->fd, buf, len);

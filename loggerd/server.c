@@ -1,7 +1,7 @@
 #include "server.h"
-#include "client.h"
+#include "epollclient.h"
 #include "mylog.h"
-#include "types.h"
+#include "memtypes.h"
 #include <glib.h>
 #include <glib/ghash.h>
 
@@ -9,7 +9,7 @@ static void process_signal(int s);
 static void set_signal();
 
 static struct epoll_event *events = 0;
-EpollClient *clients = 0;
+EpollClient *epoll_clients = 0;
 
 int setnonblocking(int sockfd) {
   if (fcntl(sockfd, F_SETFL, fcntl(sockfd, F_GETFD, 0) | O_NONBLOCK) == -1) {
@@ -25,6 +25,7 @@ int server(accept_callback accept_fun, read_callback read_fun) {
   socklen_t socklen = sizeof(struct sockaddr_in);
   struct epoll_event ev;
   GHashTable *epoll_hash_table = NULL;
+  gboolean gb;
 
   events = calloc(1, sizeof(struct epoll_event) * configData.block_amount);
   if(events == 0){
@@ -150,9 +151,9 @@ int server(accept_callback accept_fun, read_callback read_fun) {
             break;
           }
 
-          gboolean b = g_hash_table_insert(epoll_hash_table, GINT_TO_POINTER(connfd),
+          gb = g_hash_table_insert(epoll_hash_table, GINT_TO_POINTER(connfd),
                               GINT_TO_POINTER(epoll_client));
-          if(b == FALSE){
+          if(gb == FALSE){
               mylog(configData.logfile, L_ERR, "g_hash_table_insert failed!");
               configData.stop = 1;
               break;
@@ -164,6 +165,8 @@ int server(accept_callback accept_fun, read_callback read_fun) {
           int result = accept_fun(connfd, &cliaddr, (void**)&epoll_client);
           if (result) {
             configData.stop = 1;
+            close(connfd);
+            epoll_client->free = true;
             break;
           }
 
@@ -180,7 +183,20 @@ int server(accept_callback accept_fun, read_callback read_fun) {
 
         curfds++;
         continue;
-      } else {
+      }
+      else if ((events[n].events & EPOLLERR) ||
+               (events[n].events & EPOLLHUP) ||
+               (!(events[n].events & EPOLLIN)))
+      {
+          fprintf (stderr, "epoll error\n");
+          gpointer pt = g_hash_table_lookup(epoll_hash_table,
+                                            GINT_TO_POINTER(events[n].data.fd));
+          close(((EpollClient*)pt)->fd);
+          epoll_ctl(kdpfd, EPOLL_CTL_DEL, events[n].data.fd, &ev);
+          curfds--;
+          ((EpollClient*)pt)->free = true;
+      }
+      else {
         // 处理客户端请求
         gpointer pt = g_hash_table_lookup(epoll_hash_table,
                                           GINT_TO_POINTER(events[n].data.fd));
@@ -190,9 +206,10 @@ int server(accept_callback accept_fun, read_callback read_fun) {
           break;
         } else {
           if (read_fun(pt) < 0) {
+            close(((EpollClient*)pt)->fd);
             epoll_ctl(kdpfd, EPOLL_CTL_DEL, events[n].data.fd, &ev);
-            close
             curfds--;
+            ((EpollClient*)pt)->free = true;
           }
         }
       }
@@ -208,7 +225,7 @@ int server(accept_callback accept_fun, read_callback read_fun) {
 
   g_hash_table_destroy(epoll_hash_table);
   release_client_datas();
-  free(clients);
+  free(epoll_clients);
   free(events);
   return 0;
 }

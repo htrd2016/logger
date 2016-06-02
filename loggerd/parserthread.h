@@ -1,7 +1,7 @@
 #ifndef __PARSER_THRESD_H_INCLUDE__
 #define __PARSER_THRESD_H_INCLUDE__
 
-#include "types.h"
+#include "memtypes.h"
 
 #ifdef __cplusplus
 extern "C" {

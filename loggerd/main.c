@@ -4,8 +4,8 @@
 #include "mylog.h"
 #include "parserthread.h"
 #include "server.h"
-#include "types.h"
-#include "client.h"
+#include "memtypes.h"
+#include "epollclient.h"
 
 ConfData configData;
 extern int logger_accept(int connfd, struct sockaddr_in* cliaddr, void** out_data);
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
 
   result = server(logger_accept, handle);
 
-  sleep(10);
+  sleep(5);
   release_mem();
 
   return result;
