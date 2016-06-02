@@ -8,7 +8,6 @@ static void process_signal(int s);
 static void set_signal();
 
 static struct epoll_event *events = 0;
-EpollClient *epoll_clients = 0;
 static EpollClient *hhash = 0;
 
 int setnonblocking(int sockfd) {
