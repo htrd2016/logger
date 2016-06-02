@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+static char *lszt = NULL;
 /*
 *buffer:要解析的buffer
 *buffer_length:buffer的实际长度，与是否为'\0'结尾没有关系
@@ -17,6 +18,7 @@ int get_line(uchar *buffer,
              int *remaning_length,
              int *is_full_line)
 {
+    char *phead = (char*)buffer;
     uchar *buf = buffer;
     uchar *pLineEndPos = buf;
     *remaning_length = buffer_length;
@@ -75,6 +77,7 @@ int get_line(uchar *buffer,
         }
         (*remaning_length)--;
         is_replace_last = 1;
+        printf("%c\n", *buf);
     }
 
     if(is_replace_last==1)
@@ -85,6 +88,17 @@ int get_line(uchar *buffer,
 
     (*remaning_length)--;
     pLineEndPos = buf;
+//    if(pLineEndPos == (*next_line))
+//    {
+//        int j=0;
+//        j++;
+//    }
+    if(*remaning_length == 1)
+    {
+        int j=0;
+        j++;
+    }
+    lszt = (char*)next_line;
     return pLineEndPos - (*next_line)+1;
 }
 
@@ -106,35 +120,35 @@ bool get_end_half_line(const uchar *buf_start, const uchar *buf_end,
     *out_last_line_start = (uchar*)buf_end;
     *have_multi_lines = 0;
 
-    if(buf_end-buf_start+1<=3)
-    {
-        if((char)*buf_start == '\r'
-                && (char)*(buf_start+1) == '\r')
-        {
-            *have_multi_lines = 1;
-            return false;
-        }
-        if(buf_end-buf_start+1==3)
-        {
-            if((char)*buf_start == '\r' && (char)*(buf_start+1) == '\n' && (char)*(buf_end) == '\0')
-            {
-                  return false;
-            }
-        }
-        char *headtmp = (char*)buf_end;
-        while((char)*headtmp != '\n'
-              && (char)*headtmp!='\r'
-              && (char*)headtmp>(char*)buf_start)
-        {
-            headtmp--;
-        }
-        if((char)*headtmp == '\n' || (char)*headtmp=='\r')
-        {
-            headtmp++;
-        }
-        *out_last_line_start = (uchar*)headtmp;
-        return true;
-    }
+//    if(buf_end-buf_start+1<=3)
+//    {
+//        if((char)*buf_start == '\r'
+//                && (char)*(buf_start+1) == '\r')
+//        {
+//            *have_multi_lines = 1;
+//            return false;
+//        }
+//        if(buf_end-buf_start+1==3)
+//        {
+//            if((char)*buf_start == '\r' && (char)*(buf_start+1) == '\n' && (char)*(buf_end) == '\0')
+//            {
+//                  return false;
+//            }
+//        }
+//        char *headtmp = (char*)buf_end;
+//        while((char)*headtmp != '\n'
+//              && (char)*headtmp!='\r'
+//              && (char*)headtmp>(char*)buf_start)
+//        {
+//            headtmp--;
+//        }
+//        if((char)*headtmp == '\n' || (char)*headtmp=='\r')
+//        {
+//            headtmp++;
+//        }
+//        *out_last_line_start = (uchar*)headtmp;
+//        return true;
+//    }
 
     while(*p != '\n' && *p != '\r' && p>buf_start)
     {

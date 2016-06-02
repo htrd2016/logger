@@ -176,7 +176,7 @@ TEST(get_end_half_line, 0_1) {
   EXPECT_EQ(haveMultiLine, false);
   EXPECT_EQ(pLineStart, data);
 
-  //*****不能对最后一位后面的一位改为'\0',否则有可能指针溢出，正确的测试用力应该如下***
+  //*****不能对最后一位后面的一位改为'\0',否则有可能指针yuejie，正确的测试用力应该如下***
   //EXPECT_EQ(strcmp((char *)pLineStart, "log"), 0);
   EXPECT_EQ(strcmp((char *)pLineStart, "log0"), 0);
 }

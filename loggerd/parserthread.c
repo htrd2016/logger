@@ -24,11 +24,12 @@
 
 static void *pasreProc(void *);
 
+//May 06 19:51:00 hitrade1 tkernel 1[1667]: TradeSize 0
 void parseLine(const uchar *line_start_ptr, const uchar *line_end_ptr)
 {
-    if(line_end_ptr-line_start_ptr<41)
-    {printf("------(%s)-(%s)", line_start_ptr, line_end_ptr);
-        printf("parse line error\n");
+    if (line_end_ptr-line_start_ptr<41)
+    {
+        printf("------(%s)-(%s)", line_start_ptr, line_end_ptr);
         mylog(configData.logfile, L_ERR, "parse line [%s] error,len=%d", line_start_ptr, line_end_ptr-line_start_ptr+1);
 
         return;
@@ -67,7 +68,7 @@ void *pasreProc(void *p) {
       pThreadData->free = false;
       uchar *start = pThreadData->recv_buffer->data_start_ptr;
       int remaning_length = pThreadData->recv_buffer->data_end_ptr -
-                         pThreadData->recv_buffer->data_start_ptr + 1;
+                         pThreadData->recv_buffer->data_start_ptr + 1+ 1;
 
       uchar *line_start = NULL;
       int is_full_line = false;
@@ -83,6 +84,11 @@ void *pasreProc(void *p) {
           //lineId++;
         }
 
+        if(nLength<=0)
+            stop;
+
+        start = line_start + nLength;
+
         if (remaning_length == 0) {
           pThreadData->recv_buffer->data_end_ptr =
               pThreadData->recv_buffer->data_start_ptr;
@@ -93,7 +99,6 @@ void *pasreProc(void *p) {
           mylog(configData.logfile, L_INFO, "thread %d pasre over", nThreadID);
           break;
         }
-        start = line_start + nLength;
       }
     } else {
       // printf("free!!!\n");
@@ -175,7 +180,7 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
                          : (pRecvBuffer->data_end_ptr + 1);
   ssize_t nread = read(connfd, write_ptr, remaning_length); //读取客户端socket流
 
-  if (nread == 0) { //client closed
+  if (nread == 0 errno====) { //client closed
     printf("client close the connection\n");
     mylog(configData.logfile, L_INFO, "client close the connection: %s %d",
           pClientData->szIP, pClientData->nPort);
@@ -188,20 +193,21 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
 
   if (nread < 0 && errno != EINTR) {//read error
     perror("read error");
-    close(connfd);
-    in_client->free = true;
+    del ==close(connfd);
+    del ==in_client->free = true;
     reset_block(block);
     out_thread_data->free = true;
     return -1;
   }
 
-  uchar *line_start = NULL;
-  uchar *line_end = NULL;
+  uchar *tail_line_start = NULL;
+  uchar *tail_line_end = NULL;
   int have_multi_line = 0;
   bool have_half_line =
-      get_end_half_line(pRecvBuffer->buf_start, write_ptr + nread - 1,
-                        &line_start, &line_end, &have_multi_line);
+      get_end_half_line(pRecvBuffer->buf_start, write_ptr + nread,
+                        &tail_line_start, &tail_line_end, &have_multi_line);
 
+  //can shu ming xiu gai
   // 1.one harf line "111111"
   if (have_multi_line == 0 && have_half_line == true) {
     pRecvBuffer->data_end_ptr = write_ptr + nread - 1;
@@ -233,11 +239,13 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
       out_thread_data->free = true;
       return -1;
     }
-    size_t copy_len = line_end - line_start + 1;
-    memcpy(second_recv_buffer->data_start_ptr, line_start, copy_len);
+    printf("%s\n", tail_line_start);
+    size_t copy_len = tail_line_end - tail_line_start + 1;
+    memcpy(second_recv_buffer->data_start_ptr, tail_line_start, copy_len);
     second_recv_buffer->data_end_ptr =
         second_recv_buffer->data_end_ptr + copy_len - 1;
-    *line_start = '\0';
+    memset(tail_line_start, copy_len, 0);
+    *tail_line_start = '\0';
     pRecvBuffer->data_end_ptr = pRecvBuffer->data_end_ptr + nread - copy_len;
     out_thread_data->recv_buffer = pRecvBuffer;
     out_thread_data->have_data = true;
