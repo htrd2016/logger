@@ -8,6 +8,7 @@ static void process_signal(int s);
 static void set_signal();
 
 static struct epoll_event *events = 0;
+EpollClient *epoll_clients = 0;
 static EpollClient *hhash = 0;
 
 int setnonblocking(int sockfd) {
@@ -178,28 +179,18 @@ int server(accept_callback accept_fun, read_callback read_fun) {
         EpollClient *ec = 0;
         HASH_FIND_INT(hhash, &(events[n].data.fd), ec);
         if (ec == NULL) {
-          mylog(configData.logfile, L_ERR, "EpollClient* epoll_cleint");
+          mylog(configData.logfile, L_ERR, "HASH_FIND_INT");
           configData.stop = 1;
           break;
         } else {
-
-          printf("%d -> %d, will remove from hashtable\n", events[n].events, ec->fd);
-          HASH_DEL(hhash, ec);
           if ((events[n].events & EPOLLERR) || (events[n].events & EPOLLHUP) ||
-              (!(events[n].events & EPOLLIN))) {
+              (!(events[n].events & EPOLLIN)) || read_fun(ec) < 0) {
             fprintf(stderr, "epoll error\n");
             close(ec->fd);
             epoll_ctl(kdpfd, EPOLL_CTL_DEL, events[n].data.fd, &ev);
             curfds--;
             ec->free = true;
-          } else {
-
-            if (read_fun(ec) < 0) {
-              close(ec->fd);
-              epoll_ctl(kdpfd, EPOLL_CTL_DEL, events[n].data.fd, &ev);
-              curfds--;
-              ec->free = true;
-            }
+            HASH_DEL(hhash, ec);
           }
         }
       }

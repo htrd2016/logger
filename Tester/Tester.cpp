@@ -9,146 +9,99 @@
 
 ConfData configData;
 
-TEST(TestTypedefs, TestTypedefs) {
+void Test_Typedef() {
+    int nRet = init_mem();
+    EXPECT_EQ(nRet, 0);
+
+    uchar *indicator = configData.indicator_memory;
+    uchar *recv_buf = configData.recv_data_memory;
+
+    EXPECT_EQ(reinterpret_cast<void *>(indicator),
+              reinterpret_cast<void *>(configData.pBlock));
+    EXPECT_EQ(reinterpret_cast<void *>(
+                  indicator + configData.block_amount * sizeof(Block) +
+                  configData.block_amount * configData.buffer_amount_in_block *
+                      sizeof(RecvBuffer)),
+              reinterpret_cast<void *>(configData.pThreadData));
+    EXPECT_EQ(configData.pBlock[0].recvBufs[0].buf_start, recv_buf);
+
+    for (uint32 block_pos = 0; block_pos < configData.block_amount; ++block_pos) {
+      Block *block = &configData.pBlock[block_pos];
+      EXPECT_EQ(block, configData.pBlock + block_pos);
+      EXPECT_EQ(block->buffer_amount, configData.buffer_amount_in_block);
+      EXPECT_EQ(block->bufIndexToWrite, 0);
+      EXPECT_EQ(block->free, 1);
+      EXPECT_EQ(block->pHeadPtr, block->recvBufs->buf_start);
+      EXPECT_EQ(block->pTailPtr - block->pHeadPtr + 1,
+                configData.buffer_amount_in_block * configData.size_of_buffer);
+      EXPECT_EQ(reinterpret_cast<uchar *>(block->recvBufs) -
+                    reinterpret_cast<uchar *>(block),
+                (configData.block_amount - block_pos) * sizeof(Block) +
+                    block_pos *
+                        (configData.buffer_amount_in_block * sizeof(RecvBuffer)));
+
+      for (uint32 recbuf_pos = 0; recbuf_pos < configData.buffer_amount_in_block;
+           ++recbuf_pos) {
+        RecvBuffer *recvbuf = &block->recvBufs[recbuf_pos];
+        EXPECT_EQ(recvbuf->buf_start, recv_buf +
+                                          block_pos *
+                                              configData.buffer_amount_in_block *
+                                              configData.size_of_buffer +
+                                          recbuf_pos * configData.size_of_buffer);
+        EXPECT_EQ(recvbuf->buf_end - recvbuf->buf_start + 1,
+                  configData.size_of_buffer);
+        EXPECT_EQ(recvbuf->buf_start, recvbuf->data_end_ptr);
+        EXPECT_EQ(recvbuf->buf_start, recvbuf->data_start_ptr);
+        EXPECT_EQ(recvbuf->free, true);
+      }
+    }
+
+    for (uint32 thread_pos = 0; thread_pos < configData.thread_amount;
+         ++thread_pos) {
+      ThreadData *thread = &configData.pThreadData[thread_pos];
+      EXPECT_EQ(thread->free, true);
+      EXPECT_EQ(thread->have_data, false);
+      EXPECT_EQ(reinterpret_cast<void *>(thread->recv_buffer),
+                reinterpret_cast<void *>(0));
+      EXPECT_EQ(reinterpret_cast<void *>(thread->block),
+                reinterpret_cast<void *>(0));
+    }
+
+    release_mem();
+
+    EXPECT_EQ(configData.indicator_memory, reinterpret_cast<uchar *>(0));
+    EXPECT_EQ(configData.recv_data_memory, reinterpret_cast<uchar *>(0));
+    uchar *zero_mem = (uchar *)calloc(1, sizeof(configData));
+    EXPECT_EQ(memcmp(&configData, zero_mem, sizeof(configData)), 0);
+    free(zero_mem);
+}
+
+TEST(TestTypedefs, 1) {
   configData.block_amount = 10;
   configData.buffer_amount_in_block = 3;
   configData.size_of_buffer = 1024;
   configData.thread_amount = 3;
 
-  int nRet = init_mem();
-  EXPECT_EQ(nRet, 0);
+  Test_Typedef();
+}
 
-  uchar *indicator = configData.indicator_memory;
-  uchar *recv_buf = configData.recv_data_memory;
-
-  EXPECT_EQ(reinterpret_cast<void *>(indicator),
-            reinterpret_cast<void *>(configData.pBlock));
-  EXPECT_EQ(reinterpret_cast<void *>(
-                indicator + configData.block_amount * sizeof(Block) +
-                configData.block_amount * configData.buffer_amount_in_block *
-                    sizeof(RecvBuffer)),
-            reinterpret_cast<void *>(configData.pThreadData));
-  EXPECT_EQ(configData.pBlock[0].recvBufs[0].buf_start, recv_buf);
-
-  for (uint32 block_pos = 0; block_pos < configData.block_amount; ++block_pos) {
-    Block *block = &configData.pBlock[block_pos];
-    EXPECT_EQ(block, configData.pBlock + block_pos);
-    EXPECT_EQ(block->buffer_amount, configData.buffer_amount_in_block);
-    EXPECT_EQ(block->bufIndexToWrite, 0);
-    EXPECT_EQ(block->free, 1);
-    EXPECT_EQ(block->pHeadPtr, block->recvBufs->buf_start);
-    EXPECT_EQ(block->pTailPtr - block->pHeadPtr + 1,
-              configData.buffer_amount_in_block * configData.size_of_buffer);
-    EXPECT_EQ(reinterpret_cast<uchar *>(block->recvBufs) -
-                  reinterpret_cast<uchar *>(block),
-              (configData.block_amount - block_pos) * sizeof(Block) +
-                  block_pos *
-                      (configData.buffer_amount_in_block * sizeof(RecvBuffer)));
-
-    for (uint32 recbuf_pos = 0; recbuf_pos < configData.buffer_amount_in_block;
-         ++recbuf_pos) {
-      RecvBuffer *recvbuf = &block->recvBufs[recbuf_pos];
-      EXPECT_EQ(recvbuf->buf_start, recv_buf +
-                                        block_pos *
-                                            configData.buffer_amount_in_block *
-                                            configData.size_of_buffer +
-                                        recbuf_pos * configData.size_of_buffer);
-      EXPECT_EQ(recvbuf->buf_end - recvbuf->buf_start + 1,
-                configData.size_of_buffer);
-      EXPECT_EQ(recvbuf->buf_start, recvbuf->data_end_ptr);
-      EXPECT_EQ(recvbuf->buf_start, recvbuf->data_start_ptr);
-      EXPECT_EQ(recvbuf->free, true);
-    }
-  }
-
-  for (uint32 thread_pos = 0; thread_pos < configData.thread_amount;
-       ++thread_pos) {
-    ThreadData *thread = &configData.pThreadData[thread_pos];
-    EXPECT_EQ(thread->free, true);
-    EXPECT_EQ(thread->have_data, false);
-    EXPECT_EQ(reinterpret_cast<void *>(thread->recv_buffer),
-              reinterpret_cast<void *>(0));
-    EXPECT_EQ(reinterpret_cast<void *>(thread->block),
-              reinterpret_cast<void *>(0));
-  }
-
-  release_mem();
-
-  EXPECT_EQ(configData.indicator_memory, reinterpret_cast<uchar *>(0));
-  EXPECT_EQ(configData.recv_data_memory, reinterpret_cast<uchar *>(0));
-  uchar *zero_mem = (uchar *)calloc(1, sizeof(configData));
-  EXPECT_EQ(memcmp(&configData, zero_mem, sizeof(configData)), 0);
-  free(zero_mem);
-
+TEST(TestTypedefs, 2) {
   configData.block_amount = 20;
   configData.buffer_amount_in_block = 5;
   configData.size_of_buffer = 1024 * 1024;
   configData.thread_amount = 10;
 
-  nRet = init_mem();
-  EXPECT_EQ(nRet, 0);
+  Test_Typedef();
+}
 
-  indicator = configData.indicator_memory;
-  recv_buf = configData.recv_data_memory;
 
-  EXPECT_EQ(reinterpret_cast<void *>(indicator),
-            reinterpret_cast<void *>(configData.pBlock));
-  EXPECT_EQ(reinterpret_cast<void *>(
-                indicator + configData.block_amount * sizeof(Block) +
-                configData.block_amount * configData.buffer_amount_in_block *
-                    sizeof(RecvBuffer)),
-            reinterpret_cast<void *>(configData.pThreadData));
-  EXPECT_EQ(configData.pBlock[0].recvBufs[0].buf_start, recv_buf);
+TEST(TestTypedefs, 3) {
+  configData.block_amount = 1;
+  configData.buffer_amount_in_block = 1;
+  configData.size_of_buffer = 1;
+  configData.thread_amount = 1;
 
-  for (uint32 block_pos = 0; block_pos < configData.block_amount; ++block_pos) {
-    Block *block = &configData.pBlock[block_pos];
-    EXPECT_EQ(block, configData.pBlock + block_pos);
-    EXPECT_EQ(block->buffer_amount, configData.buffer_amount_in_block);
-    EXPECT_EQ(block->bufIndexToWrite, 0);
-    EXPECT_EQ(block->free, 1);
-    EXPECT_EQ(block->pHeadPtr, block->recvBufs->buf_start);
-    EXPECT_EQ(block->pTailPtr - block->pHeadPtr + 1,
-              configData.buffer_amount_in_block * configData.size_of_buffer);
-    EXPECT_EQ(reinterpret_cast<uchar *>(block->recvBufs) -
-                  reinterpret_cast<uchar *>(block),
-              (configData.block_amount - block_pos) * sizeof(Block) +
-                  block_pos *
-                      (configData.buffer_amount_in_block * sizeof(RecvBuffer)));
-
-    for (uint32 recbuf_pos = 0; recbuf_pos < configData.buffer_amount_in_block;
-         ++recbuf_pos) {
-      RecvBuffer *recvbuf = &block->recvBufs[recbuf_pos];
-      EXPECT_EQ(recvbuf->buf_start, recv_buf +
-                                        block_pos *
-                                            configData.buffer_amount_in_block *
-                                            configData.size_of_buffer +
-                                        recbuf_pos * configData.size_of_buffer);
-      EXPECT_EQ(recvbuf->buf_end - recvbuf->buf_start + 1,
-                configData.size_of_buffer);
-      EXPECT_EQ(recvbuf->buf_start, recvbuf->data_end_ptr);
-      EXPECT_EQ(recvbuf->buf_start, recvbuf->data_start_ptr);
-      EXPECT_EQ(recvbuf->free, true);
-    }
-  }
-
-  for (uint32 thread_pos = 0; thread_pos < configData.thread_amount;
-       ++thread_pos) {
-    ThreadData *thread = &configData.pThreadData[thread_pos];
-    EXPECT_EQ(thread->free, true);
-    EXPECT_EQ(thread->have_data, false);
-    EXPECT_EQ(reinterpret_cast<void *>(thread->recv_buffer),
-              reinterpret_cast<void *>(0));
-    EXPECT_EQ(reinterpret_cast<void *>(thread->block),
-              reinterpret_cast<void *>(0));
-  }
-
-  release_mem();
-
-  EXPECT_EQ(configData.indicator_memory, reinterpret_cast<uchar *>(0));
-  EXPECT_EQ(configData.recv_data_memory, reinterpret_cast<uchar *>(0));
-  zero_mem = (uchar *)calloc(1, sizeof(configData));
-  EXPECT_EQ(memcmp(&configData, zero_mem, sizeof(configData)), 0);
-  free(zero_mem);
+  Test_Typedef();
 }
 
 TEST(get_end_half_line, 0) {
@@ -564,4 +517,14 @@ TEST(get_line, 1) {
   EXPECT_EQ(nLen, 2);
   EXPECT_EQ(strlen((char *)pLineStart), 10);
   EXPECT_EQ(nFullLine, 0);
+}
+
+
+TEST(server_Connection, 1) {
+    ///!!! MOST IMPORTANT !!!///
+    //before you start test, MUST change this path to correct your server's path
+    //
+    char servpath[] = "/home/sean/projects/htrd2016/logger/build/gcc/debug/tcp_server";
+    short port = 12345;
+
 }
