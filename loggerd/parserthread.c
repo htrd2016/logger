@@ -170,7 +170,8 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
   RecvBuffer *pRecvBuffer;
   int connfd;
   uchar *write_ptr;
-  size_t read_len = 0;
+  uchar *write_prt_tmp;
+  size_t total_read_len = 0;
   ssize_t nread;
 
   uchar *tail_line_start = NULL;
@@ -206,18 +207,12 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
   write_ptr = (pRecvBuffer->data_end_ptr == pRecvBuffer->buf_start)
                          ? (pRecvBuffer->buf_start)
                          : (pRecvBuffer->data_end_ptr + 1);
+  write_prt_tmp = write_ptr;
   while(remaning_length>0)
   {
-      nread = read(connfd, write_ptr, remaning_length); //读取客户端socket流
+      nread = read(connfd, write_prt_tmp, remaning_length); //读取客户端socket流
 
       if (nread == 0) { //client closed
-          //    printf("client close the connection\n");
-          //    mylog(configData.logfile, L_INFO, "client close the connection: %s %d",
-          //          pClientData->szIP, pClientData->nPort);
-          //    in_client->free = true;
-          //    reset_block(block);
-          //    out_thread_data->free = true;
-
           //EOF ，说明客户端发来了FIN；
           break;
       }
@@ -229,23 +224,22 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
           return -1;
       }
 
-      if(nread<remaning_length)
-      {
-          read_len = nread;
+      if(nread<remaning_length){
+          total_read_len = nread;
           break;
       }
 
-      write_ptr += (int)nread;
+      write_prt_tmp += (int)nread;
       remaning_length -= nread;
-      read_len += nread;
+      total_read_len += nread;
   }
 
-  have_half_line = get_end_half_line(pRecvBuffer->buf_start, write_ptr + read_len - 1,
+  have_half_line = get_end_half_line(pRecvBuffer->buf_start, write_ptr + total_read_len - 1,
                         &tail_line_start, &tail_line_end, &have_full_line);
 
   // 1.one harf line "111111"
   if (have_full_line == 0 && have_half_line == true) {
-    pRecvBuffer->data_end_ptr = write_ptr + read_len - 1;
+    pRecvBuffer->data_end_ptr = write_ptr + total_read_len - 1;
     out_thread_data->free = true;
     return 0;
   }
@@ -255,7 +249,7 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
     if (block->bufIndexToWrite >= configData.buffer_amount_in_block) {
       block->bufIndexToWrite = 0;
     }
-    pRecvBuffer->data_end_ptr = write_ptr + read_len - 1;
+    pRecvBuffer->data_end_ptr = write_ptr + total_read_len - 1;
     out_thread_data->recv_buffer = pRecvBuffer;
     out_thread_data->have_data = true;
   }
@@ -280,11 +274,11 @@ ssize_t read_socket_to_recv_buffer(EpollClient *in_client,
         second_recv_buffer->data_end_ptr + copy_len - 1;
     memset(tail_line_start, 0, copy_len);
     *tail_line_start = '\n';
-    pRecvBuffer->data_end_ptr = pRecvBuffer->data_end_ptr + read_len - copy_len;
+    pRecvBuffer->data_end_ptr = pRecvBuffer->data_end_ptr + total_read_len - copy_len;
     out_thread_data->recv_buffer = pRecvBuffer;
     out_thread_data->have_data = true;
   }
-  return read_len;
+  return total_read_len;
 }
 
 int handle(void *in_param) {

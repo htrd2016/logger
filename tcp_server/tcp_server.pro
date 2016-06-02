@@ -10,10 +10,10 @@ LIBS += -L/usr/lib -lm -lglib-2.0
 
 SOURCES += main.c \
     ../loggerd/server.c \
-    ../loggerd/client.c \
+    ../loggerd/epollclient.c \
     ../loggerd/mylog.c
 
 HEADERS += \
-    ../loggerd/client.h \
+    ../loggerd/epollclient.h \
     ../loggerd/mylog.h \
     ../loggerd/server.h

@@ -4,7 +4,7 @@
 #include "types.h"
 #include "mylog.h"
 #include "server.h"
-#include "client.h"
+#include "epollclient.h"
 
 ConfData configData;
 
