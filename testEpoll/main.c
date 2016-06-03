@@ -12,7 +12,7 @@
 #define MAX_EVENTS 1024
 #define BUFFER_LENGTH 8192
 
-void epoll_server()
+void epoll_server(int port)
 {
     int listenq = 1024;
     int listenfd, n;
@@ -25,7 +25,7 @@ void epoll_server()
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port = htons(12349);
+    servaddr.sin_port = htons(port);
 
     listenfd = socket(AF_INET, SOCK_STREAM, 0);
     if (listenfd == -1)
@@ -143,9 +143,16 @@ void epoll_server()
     }
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
-    epoll_server();
+    if(argc<2)
+    {
+        printf("path <port>\n");
+        return -1;
+    }
+
+    int port = atoi(argv[1]);
+    epoll_server(port);
     return 0;
 }
 
