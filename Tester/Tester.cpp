@@ -533,7 +533,7 @@ void Test_Connection(int amount) {
   //
   int i = 0;
   //    char servpath[] = "/home/yang/workspace/logger/tcp_server/tcp_server";
-  short port = 12345;
+  short port = 12349;
 
   //    char str_port[10];
   //    char str_client_number[10];
@@ -652,7 +652,7 @@ static uint8_t bad[10];
 
 void *TcpClient(void *param) {
   //    char servpath[] = "/home/yang/workspace/logger/tcp_server/tcp_server";
-  short port = 12345;
+  short port = 12349;
 
   char server_ip[] = "127.0.0.1";
   char send_buf[MSG_MAX_LENGTH] = "msg";
