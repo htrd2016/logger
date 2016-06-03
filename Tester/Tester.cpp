@@ -620,35 +620,35 @@ void Test_Connection(int amount) {
 
   delete[] socks;
 }
-//
-//TEST(server_Connection, 1) {
-//  for (int i = 0; i < 20; i++)
-//    Test_Connection(10);
-//}
-//
-//TEST(server_Connection, 2) {
-//  for (int i = 0; i < 20; i++)
-//    Test_Connection(1);
-//}
-//
-//TEST(server_Connection, 3) {
-//  for (int i = 0; i < 20; i++)
-//    Test_Connection(8);
-//}
-//
-//TEST(server_Connection, 4) {
-//  for (int i = 0; i < 20; i++)
-//    Test_Connection(4);
-//}
-//
-//TEST(server_Connection, 5) {
-//  for (int i = 0; i < 20; i++)
-//    Test_Connection(10);
-//}
-//
+
+TEST(server_Connection, 1) {
+  for (int i = 0; i < 20; i++)
+    Test_Connection(10);
+}
+
+TEST(server_Connection, 2) {
+  for (int i = 0; i < 20; i++)
+    Test_Connection(1);
+}
+
+TEST(server_Connection, 3) {
+  for (int i = 0; i < 20; i++)
+    Test_Connection(8);
+}
+
+TEST(server_Connection, 4) {
+  for (int i = 0; i < 20; i++)
+    Test_Connection(4);
+}
+
+TEST(server_Connection, 5) {
+  for (int i = 0; i < 20; i++)
+    Test_Connection(10);
+}
+
 typedef struct thread_param { uint8_t id; } thread_param;
 
-static int bad[10];
+static uint8_t bad[10];
 
 void *TcpClient(void *param) {
   //    char servpath[] = "/home/yang/workspace/logger/tcp_server/tcp_server";
@@ -698,18 +698,23 @@ void *TcpClient(void *param) {
 
       ret = (sended_out_length == MSG_MAX_LENGTH);
       EXPECT_NE(ret, 0);
-      if (!ret)
+      if (!ret) {
+        printf("thread id %d , test sended_out_length == MSG_MAX_LENGTH\n", ((thread_param *)param)->id);
         goto bad_return;
-
+      }
       ret = (recv_length == MSG_MAX_LENGTH);
       EXPECT_NE(ret, 0);
-      if (!ret)
+      if (!ret) {
+        printf("thread id %d , recv_length == MSG_MAX_LENGTH\n", ((thread_param *)param)->id);
         goto bad_return;
+      }
 
       ret = memcmp(recv_buf, send_buf, MSG_MAX_LENGTH);
       EXPECT_EQ(ret, 0);
-      if (ret)
+      if (ret) {
+        printf("thread id %d , memcmp\n", ((thread_param *)param)->id);
         goto bad_return;
+      }
 
       //sended_out_length = send(sockfd, send_buf, MSG_MAX_LENGTH, 0);
       //recv_length = recv(sockfd, recv_buf, MSG_MAX_LENGTH, 0);
@@ -733,18 +738,19 @@ void *TcpClient(void *param) {
     goto bad_return;
 
   close(sockfd);
-  pthread_detach(pthread_self());
+  //pthread_detach(pthread_self());
   return (0);
 bad_return:
   bad[((thread_param *)param)->id] = 1;
   close(sockfd);
-  pthread_detach(pthread_self());
+  //pthread_detach(pthread_self());
   return (0);
 }
 
 TEST(TcpClient, 1) {
   thread_param param[10];
   pthread_t t[10];
+  memset(bad, 0, 10);
   for (int i = 0; i < 10; i++) {
     param[i].id = (uint8_t)i;
     int ret = pthread_create(t + i, 0, TcpClient, param + i);
