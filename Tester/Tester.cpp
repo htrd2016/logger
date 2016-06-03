@@ -134,7 +134,7 @@ TEST(get_end_half_line, 0_1) {
   EXPECT_EQ(haveMultiLine, false);
   EXPECT_EQ(pLineStart, data);
 
-  EXPECT_EQ(pLineEnd-pLineStart+1, 3);
+  EXPECT_EQ(pLineEnd - pLineStart + 1, 3);
 }
 
 TEST(get_end_half_line, 0_2) {
@@ -243,7 +243,7 @@ TEST(get_end_half_line, 2_1) {
   EXPECT_EQ(haveMultiLine, true);
   EXPECT_EQ(pLineStart, data + 25 - 1);
 
-  EXPECT_EQ(pLineEnd-pLineStart+1, 2);
+  EXPECT_EQ(pLineEnd - pLineStart + 1, 2);
 }
 
 TEST(get_end_half_line, 2_2) {
@@ -681,6 +681,18 @@ void *TcpClient(void *param) {
                       sizeof(struct sockaddr));
     EXPECT_EQ(ret, 0);
     if (ret == 0) {
+      struct timeval timeout;
+      timeout.tv_sec = 2;
+      timeout.tv_usec = 0;
+
+      if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
+                     sizeof(timeout)) < 0)
+        perror("setsockopt failed\n");
+
+      if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout,
+                     sizeof(timeout)) < 0)
+        perror("setsockopt failed\n");
+
       sended_out_length = send(sockfd, send_buf, MSG_MAX_LENGTH, 0);
       recv_length = recv(sockfd, recv_buf, MSG_MAX_LENGTH, 0);
 
@@ -720,14 +732,31 @@ void *TcpClient(void *param) {
   }
 
   close(sockfd);
+  pthread_detach(pthread_self());
   return (0);
 bad_return:
   bad[((thread_param *)param)->id] = 1;
   close(sockfd);
+  pthread_detach(pthread_self());
   return (0);
 }
 
 TEST(TcpClient, 1) {
+  thread_param param[10];
+  for (int i = 0; i < 10; i++) {
+    param[i].id = (uint8_t)i;
+    pthread_t t;
+    int ret = pthread_create(&t, 0, TcpClient, param + 1);
+    EXPECT_EQ(ret, 0);
+  }
+
+  sleep(10);
+
+  for (int i = 0; i < 10; i++)
+    EXPECT_EQ(bad[i], 0);
+}
+
+TEST(TcpClient, 2) {
   thread_param param[10];
   for (int i = 0; i < 10; i++) {
     param[i].id = (uint8_t)i;
