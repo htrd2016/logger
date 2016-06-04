@@ -11,7 +11,7 @@
 #include "mylog.h"
 #include "utils.h"
 
-#define MSG_MAX_LENGTH 8192
+#define MSG_MAX_LENGTH 16
 #define SIG_USER 14
 
 ConfData configData;
@@ -532,8 +532,7 @@ void Test_Connection(int amount) {
   short port = 12345;
 
   char server_ip[] = "127.0.0.1";
-  char send_buf[MSG_MAX_LENGTH] = "msg";
-  char recv_buf[MSG_MAX_LENGTH];
+  char buf[MSG_MAX_LENGTH];
 
   ssize_t recv_length = 0;
   ssize_t sended_out_length = 0;
@@ -544,7 +543,7 @@ void Test_Connection(int amount) {
   remote_addr.sin_family = AF_INET;
   remote_addr.sin_addr.s_addr = inet_addr(server_ip);
   remote_addr.sin_port = htons(port);
-
+  //sleep(2);
   socks = new int[amount];
   for (; i < amount; i++) {
     socks[i] = socket(AF_INET, SOCK_STREAM, 0);
@@ -554,58 +553,55 @@ void Test_Connection(int amount) {
       int ret = connect(socks[i], (struct sockaddr *)&remote_addr,
                         sizeof(struct sockaddr));
       EXPECT_EQ(ret, 0);
-      printf("%d connect result %s\n", i, ((ret == 0) ? "Good" : "Bad"));
+      //printf("%d connect result %s\n", i, ((ret == 0) ? "Good" : "Bad"));
     }
   }
+  //sleep(2);
 
   for (i = 0; i < amount; ++i) {
-        printf("%d send ... ", i);
-        sended_out_length = write(socks[i], send_buf, MSG_MAX_LENGTH);
-        memset(recv_buf, 0, MSG_MAX_LENGTH);
-        printf(" recv ...\n");
-        recv_length = read(socks[i], recv_buf, MSG_MAX_LENGTH);
+        //printf("%d send ... ", i);
+        sended_out_length = send(socks[i], buf, MSG_MAX_LENGTH, 0);
+        //recv_length = recv(socks[i], buf, MSG_MAX_LENGTH, 0);
+        //printf(" recv ...");
         EXPECT_EQ(sended_out_length, MSG_MAX_LENGTH);
-        EXPECT_EQ(recv_length, MSG_MAX_LENGTH);
-        EXPECT_EQ(memcmp(recv_buf, send_buf, MSG_MAX_LENGTH), 0);
-    }
-
-  for (i = amount - 1; i >= 0; --i) {
-      printf("%d send ... ", i);
-      sended_out_length = write(socks[i], send_buf, MSG_MAX_LENGTH);
-      memset(recv_buf, 0, MSG_MAX_LENGTH);
-      printf(" recv ...\n");
-      recv_length = read(socks[i], recv_buf, MSG_MAX_LENGTH);
-      EXPECT_EQ(sended_out_length, MSG_MAX_LENGTH);
-      EXPECT_EQ(recv_length, MSG_MAX_LENGTH);
-      EXPECT_EQ(memcmp(recv_buf, send_buf, MSG_MAX_LENGTH), 0);
+        //EXPECT_EQ(recv_length, MSG_MAX_LENGTH);
+        //printf(" done\n");
   }
+  //sleep(2);
 
-  for (i = 0; i < amount; i++)
+  for (i = 0; i < amount; i++) {
+      shutdown(socks[i], SHUT_RDWR);
       close(socks[i]);
+      //printf("close %d\n", i);
+  }
 
   delete[] socks;
 }
 
 TEST(server_Connection, 1) {
+  for (int i = 0; i < 20; ++i)
     Test_Connection(10);
 }
 
 TEST(server_Connection, 2) {
+  for (int i = 0; i < 20; ++i)
     Test_Connection(1);
 }
 
 TEST(server_Connection, 3) {
+  for (int i = 0; i < 20; ++i)
     Test_Connection(8);
 }
 
 TEST(server_Connection, 4) {
+  for (int i = 0; i < 20; ++i)
     Test_Connection(4);
 }
 
 TEST(server_Connection, 5) {
+  for (int i = 0; i < 20; ++i)
     Test_Connection(10);
 }
-
 
 #define thread_amount 10
 typedef struct thread_param { uint8_t id; } thread_param;
@@ -620,7 +616,6 @@ void *TcpClient(void *param) {
   char send_buf[MSG_MAX_LENGTH] = "msg";
   char recv_buf[MSG_MAX_LENGTH];
 
-  ssize_t recv_length = 0;
   ssize_t sended_out_length = 0;
   int sockfd = 0;
 
@@ -698,12 +693,13 @@ void *TcpClient(void *param) {
       goto bad_return;
   } else
     goto bad_return;
-
+  shutdown(sockfd, SHUT_RDWR);
   close(sockfd);
   //pthread_detach(pthread_self());
   return (0);
 bad_return:
   bad[((thread_param *)param)->id] = 1;
+  shutdown(sockfd, SHUT_RDWR);
   close(sockfd);
   //pthread_detach(pthread_self());
   return (0);
@@ -772,3 +768,4 @@ TEST(TcpClient, 1_9) {
 TEST(TcpClient, 1_10) {
     TestTcpClient();
 }
+

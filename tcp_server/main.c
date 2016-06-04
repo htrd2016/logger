@@ -23,16 +23,18 @@ int echo (void* in_param) {
 
     char buf[8192];
     int len = 0;
-    len = read(ec->fd, buf, 8192);
-    printf("sock %d, read len %d, error is %d\n", ec->fd, len, errno);
-    if (len <= 0) {
-        printf("read error %d (%d)\n", ec->fd, errno);
-        return -1;
+    while((len = read(ec->fd, buf, 8192) > 0)) {
+        //printf("sock %d, read len %d, error is %d, %s\n", ec->fd, len, errno, strerror(errno));
+        if (len < 0) break;
+        len = write(ec->fd, buf,len);
+        if (len < 0) break;
     }
-    len = write(ec->fd, buf, len);
-    printf("sock %d, write len %d\n", ec->fd, len);
-    if (len <= 0) return -1;
-    return 0;
+
+    shutdown(ec->fd, SHUT_RDWR);
+    close(ec->fd);
+
+
+    return (-1); //close
 }
 
 int main(int argc, char *argv[])
@@ -45,6 +47,6 @@ int main(int argc, char *argv[])
     memset(&configData, 0, sizeof(configData));
     configData.local_port = atoi(argv[1]);
     configData.block_amount = atoi(argv[2]);
-    strcpy(configData.logfile, "/home/sean/tcpserver.log");
+    strcpy(configData.logfile, "tcpserver.log");
     return server(my_accept, echo);
 }

@@ -18,7 +18,7 @@ int setnonblocking(int sockfd) {
 }
 
 int server(accept_callback accept_fun, read_callback read_fun) {
-  int listenq = 1024;
+  int listenq = 2 * 2 * 2 * 2 * 2 * 2 * 2 * 2 * 2 * 2 * 2 * 2 * 2 * 2 * 2 * 2;
   int listenfd, connfd, kdpfd = 0, nfds, n, curfds, acceptCount = 0;
   struct sockaddr_in servaddr, cliaddr;
   socklen_t socklen = sizeof(struct sockaddr_in);
@@ -130,6 +130,7 @@ int server(accept_callback accept_fun, read_callback read_fun) {
           continue;
         }
         ++acceptCount;
+        printf("%d accpeted\n", acceptCount);
 
         if (setnonblocking(connfd) < 0) {
           mylog(configData.logfile, L_ERR, "setnonblocking error(%s)",
@@ -181,9 +182,9 @@ int server(accept_callback accept_fun, read_callback read_fun) {
           configData.stop = 1;
           break;
         } else {
-          /*if ((events[n].events & EPOLLERR) || (events[n].events & EPOLLHUP) ||
-              (!(events[n].events & EPOLLIN)) || read_fun(ec) < 0)*/
-         if (read_fun(ec) < 0) {
+          if ((events[n].events & EPOLLERR) || (events[n].events & EPOLLHUP) ||
+              (!(events[n].events & EPOLLIN)) || read_fun(ec) < 0) {
+            shutdown(ec->fd, SHUT_RDWR);
             close(ec->fd);
             epoll_ctl(kdpfd, EPOLL_CTL_DEL, events[n].data.fd, &ev);
             curfds--;
