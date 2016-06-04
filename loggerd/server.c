@@ -115,6 +115,9 @@ int server(accept_callback accept_fun, read_callback read_fun) {
     /* 处理所有事件 */
     for (n = 0; n < nfds; ++n) {
       if (events[n].data.fd == listenfd) {
+      int nREUSEADDR = 1;
+      setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (const char*)&nREUSEADDR, sizeof(int));
+
         connfd = accept(listenfd, (struct sockaddr *)&cliaddr, &socklen);
         if (connfd < 0) {
           mylog(configData.logfile, L_ERR, "socket accept error(%s)!!",
@@ -131,6 +134,7 @@ int server(accept_callback accept_fun, read_callback read_fun) {
         }
         ++acceptCount;
         printf("%d accpeted\n", acceptCount);
+        setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (const char*)&nREUSEADDR, sizeof(int));
 
         if (setnonblocking(connfd) < 0) {
           mylog(configData.logfile, L_ERR, "setnonblocking error(%s)",

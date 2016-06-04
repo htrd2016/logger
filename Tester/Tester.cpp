@@ -534,7 +534,6 @@ void Test_Connection(int amount) {
   char server_ip[] = "127.0.0.1";
   char buf[MSG_MAX_LENGTH];
 
-  ssize_t recv_length = 0;
   ssize_t sended_out_length = 0;
   int *socks;
 
@@ -561,7 +560,7 @@ void Test_Connection(int amount) {
   for (i = 0; i < amount; ++i) {
         //printf("%d send ... ", i);
         sended_out_length = send(socks[i], buf, MSG_MAX_LENGTH, 0);
-        //recv_length = recv(socks[i], buf, MSG_MAX_LENGTH, 0);
+        //int recv_length = recv(socks[i], buf, MSG_MAX_LENGTH, 0);
         //printf(" recv ...");
         EXPECT_EQ(sended_out_length, MSG_MAX_LENGTH);
         //EXPECT_EQ(recv_length, MSG_MAX_LENGTH);
