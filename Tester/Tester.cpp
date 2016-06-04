@@ -3,6 +3,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include <signal.h>
 #include <unistd.h>
@@ -516,10 +517,71 @@ TEST(get_line, 1) {
   EXPECT_EQ(nFullLine, 0);
 }
 
-// void sigUserProc(int) {
-//  int status;
-//  wait(&status); //接收子进程退出
-//}
+TEST(Time_format3, 0)
+{
+    int ret = -1;
+    char time[] = "January 06 21:10:30";
+    time_t out_time;
+
+    ret = format_time3(time, &out_time);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(out_time, 1452085830);
+
+    strcpy(time, "February 06 21:10:30");
+    ret = format_time3(time, &out_time);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(out_time, 1454764230);
+
+    strcpy(time, "March 06 21:10:30");
+    ret = format_time3(time, &out_time);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(out_time, 1457269830);
+
+    strcpy(time, "April 06 21:10:30");
+    ret = format_time3(time, &out_time);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(out_time, 1459948230);
+
+    strcpy(time, "May 06 21:10:30");
+    ret = format_time3(time, &out_time);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(out_time, 1462540230);
+
+    strcpy(time, "June 06 21:10:30");
+    ret = format_time3(time, &out_time);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(out_time, 1465218630);
+
+    strcpy(time, "July 06 21:10:30");
+    ret = format_time3(time, &out_time);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(out_time, 1467810630);
+
+    strcpy(time, "August 06 21:10:30");
+    ret = format_time3(time, &out_time);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(out_time, 1470489030);
+
+    strcpy(time, "September 06 21:10:30");
+    ret = format_time3(time, &out_time);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(out_time, 1473167430);
+
+    strcpy(time, "October 06 21:10:30");
+    ret = format_time3(time, &out_time);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(out_time, 1475759430);
+
+    strcpy(time, "November 06 21:10:30");
+    ret = format_time3(time, &out_time);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(out_time, 1478437830);
+
+    strcpy(time, "December 06 21:10:30");
+    ret = format_time3(time, &out_time);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(out_time, 1481029830);
+}
 
 #ifdef __CLANG__
 namespace testing {

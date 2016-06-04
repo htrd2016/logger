@@ -29,8 +29,9 @@ void parseLine(const uchar *line_start_ptr, const uchar *line_end_ptr)
 {
     char* start = NULL;
     char *tail = NULL;
-//    char info[30];
     char detail[1024];
+    char json[1024];
+    strcat(json, "{\"time\":\"");
 
     if(line_end_ptr-line_start_ptr<41)
     {
@@ -38,7 +39,6 @@ void parseLine(const uchar *line_start_ptr, const uchar *line_end_ptr)
         memcpy(buf, line_start_ptr, line_end_ptr-line_start_ptr+1);
         buf[line_end_ptr-line_start_ptr+1] = '\0';
         printf("------(%s)", buf);
-        printf("parse line error\n");
         mylog(configData.logfile, L_ERR, "parse line [%s] error,len=%d", buf);
 
         return;
@@ -47,17 +47,27 @@ void parseLine(const uchar *line_start_ptr, const uchar *line_end_ptr)
     start = (char*)line_start_ptr;
     tail = start+15;
     *tail = '\0';
-    printf("time=%s ", start);
+    //printf("time=%s ", start);
+    strcat(json, start);
+    strcat(json, "\"");
 
     start = start+16;
     tail = start+25;
     *tail = '\0';
-    printf("%s ", start);
+    //printf("%s ", start);
+    strcat(json,",\"info\":\"");
+    strcat(json, start);
+    strcat(json, "\"");
 
     start = start+26;
     memcpy(detail, start, (char*)line_end_ptr-(char*)start+1);
     detail[(char*)line_end_ptr-(char*)start+1] = '\0';
-    printf("%s\n", detail);
+    //printf("%s\n", detail);
+    strcat(json,",\"detail\":\"");
+    strcat(json, start);
+    strcat(json, "\"}");
+
+    printf("%s\n", json);
 }
 
 void *pasreProc(void *p) {

@@ -209,6 +209,55 @@ int format_time2(char * time, time_t *out_time)
     return bRet;
 }
 
+int en_month_to_number(const char *szMonth)
+{
+    int i=0;
+    char *month[]={"January","February","March","April","May","June","July","August","September","October","November","December"};
+    for(i=0; i<12;i++)
+    {
+        if(strcmp(szMonth, month[i]) ==0)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+//May 06 21:10:30
+int format_time3(char *mtime, time_t *out_time)
+{
+    char szMonth[20];
+    struct tm tm1;
+    int bRet = -1;
+    int month = -1;
+
+    time_t nowtime = time(NULL);
+    struct tm *now = localtime(&nowtime);
+
+    if (sscanf(mtime, "%s %2d %2d:%2d:%2d",
+               &szMonth,
+               &tm1.tm_mday,
+               &tm1.tm_hour,
+               &tm1.tm_min,
+               &tm1.tm_sec)==5)
+    {
+        bRet = 0;
+    }
+
+    month = en_month_to_number(szMonth);
+
+    if(month == -1)
+    {
+        return -1;
+    }
+    tm1.tm_year = now->tm_year;
+    tm1.tm_mon = month;
+    tm1.tm_isdst=-1;
+
+    *out_time = mktime(&tm1);
+    return bRet;
+}
+
 char *get_data_at(const char* szInSrc, int nInSrcLength, int nInIndex, char *outData)
 {
     char *pDes = outData;
@@ -248,3 +297,4 @@ char* get_current_time(char t[])
             now->tm_hour, now->tm_min, now->tm_sec, (long)nowtime);
     return t;
 }
+

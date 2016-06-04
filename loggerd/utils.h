@@ -31,6 +31,9 @@ int format_time1(char *szTime, time_t *out_time);
 // 20151214 20:32:08
 int format_time2(char *time, time_t *out_time);
 
+//May 06 21:10:30
+int format_time3(char *time, time_t *out_time);
+
 char *get_data_at(const char *szInSrc, int nInSrcLength, int nInIndex,
                   char *outData);
 
