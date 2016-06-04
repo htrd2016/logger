@@ -528,19 +528,9 @@ std::string Message::GetString() const { return ""; }
 #endif //__CLANG__
 
 void Test_Connection(int amount) {
-  ///!!! MOST IMPORTANT !!!///
-  // before you start test, MUST change this path to correct your server's path
-  //
   int i = 0;
-  //    char servpath[] = "/home/yang/workspace/logger/tcp_server/tcp_server";
   short port = 12345;
 
-  //    char str_port[10];
-  //    char str_client_number[10];
-
-  //    int pid, ppid;
-
-  //    int ret;
   char server_ip[] = "127.0.0.1";
   char send_buf[MSG_MAX_LENGTH] = "msg";
   char recv_buf[MSG_MAX_LENGTH];
@@ -548,32 +538,6 @@ void Test_Connection(int amount) {
   ssize_t recv_length = 0;
   ssize_t sended_out_length = 0;
   int *socks;
-
-  //    char *exec_argv[2];
-
-  //    sprintf(str_port, "%d", port);
-  //    sprintf(str_client_number, "%d", client_number);
-
-  //    exec_argv[0] = str_port;
-  //    exec_argv[1] = str_client_number;
-
-  //    signal(SIG_USER, sigUserProc);
-  //    pid = fork();
-  //    ppid = getpid();
-  //    if(pid == 0)
-  //    {
-  //        ret = execv(servpath, exec_argv);
-  //        kill(ppid, SIG_USER);
-  //        return;
-  //    }
-
-  //    EXPECT_NE(ret, -1);
-  //    if(ret == -1)
-  //    {
-  //        return;
-  //    }
-
-  //    sleep(10);
 
   struct sockaddr_in remote_addr;
   memset(&remote_addr, 0, sizeof(remote_addr));
@@ -590,65 +554,63 @@ void Test_Connection(int amount) {
       int ret = connect(socks[i], (struct sockaddr *)&remote_addr,
                         sizeof(struct sockaddr));
       EXPECT_EQ(ret, 0);
-      if (ret == 0) {
-        sended_out_length = send(socks[i], send_buf, MSG_MAX_LENGTH, 0);
+      printf("%d connect result %s\n", i, ((ret == 0) ? "Good" : "Bad"));
+    }
+  }
+
+  for (i = 0; i < amount; ++i) {
+        printf("%d send ... ", i);
+        sended_out_length = write(socks[i], send_buf, MSG_MAX_LENGTH);
         memset(recv_buf, 0, MSG_MAX_LENGTH);
-        recv_length = recv(socks[i], recv_buf, MSG_MAX_LENGTH, 0);
+        printf(" recv ...\n");
+        recv_length = read(socks[i], recv_buf, MSG_MAX_LENGTH);
         EXPECT_EQ(sended_out_length, MSG_MAX_LENGTH);
         EXPECT_EQ(recv_length, MSG_MAX_LENGTH);
         EXPECT_EQ(memcmp(recv_buf, send_buf, MSG_MAX_LENGTH), 0);
-      }
     }
-  }
 
   for (i = amount - 1; i >= 0; --i) {
-    if (socks[i] > 0) {
-      sended_out_length = send(socks[i], send_buf, MSG_MAX_LENGTH, 0);
+      printf("%d send ... ", i);
+      sended_out_length = write(socks[i], send_buf, MSG_MAX_LENGTH);
       memset(recv_buf, 0, MSG_MAX_LENGTH);
-      recv_length = recv(socks[i], recv_buf, MSG_MAX_LENGTH, 0);
+      printf(" recv ...\n");
+      recv_length = read(socks[i], recv_buf, MSG_MAX_LENGTH);
       EXPECT_EQ(sended_out_length, MSG_MAX_LENGTH);
       EXPECT_EQ(recv_length, MSG_MAX_LENGTH);
       EXPECT_EQ(memcmp(recv_buf, send_buf, MSG_MAX_LENGTH), 0);
-    }
   }
 
-  for (i = 0; i < amount; i++) {
-    if (socks[i] > 0) {
+  for (i = 0; i < amount; i++)
       close(socks[i]);
-    }
-  }
 
   delete[] socks;
 }
 
 TEST(server_Connection, 1) {
-  for (int i = 0; i < 20; i++)
     Test_Connection(10);
 }
 
 TEST(server_Connection, 2) {
-  for (int i = 0; i < 20; i++)
     Test_Connection(1);
 }
 
 TEST(server_Connection, 3) {
-  for (int i = 0; i < 20; i++)
     Test_Connection(8);
 }
 
 TEST(server_Connection, 4) {
-  for (int i = 0; i < 20; i++)
     Test_Connection(4);
 }
 
 TEST(server_Connection, 5) {
-  for (int i = 0; i < 20; i++)
     Test_Connection(10);
 }
 
+
+#define thread_amount 10
 typedef struct thread_param { uint8_t id; } thread_param;
 
-static uint8_t bad[10];
+static uint8_t bad[thread_amount];
 
 void *TcpClient(void *param) {
   //    char servpath[] = "/home/yang/workspace/logger/tcp_server/tcp_server";
@@ -694,7 +656,7 @@ void *TcpClient(void *param) {
         perror("setsockopt failed\n");
 
       sended_out_length = send(sockfd, send_buf, MSG_MAX_LENGTH, 0);
-      recv_length = recv(sockfd, recv_buf, MSG_MAX_LENGTH, 0);
+      //recv_length = recv(sockfd, recv_buf, MSG_MAX_LENGTH, 0);
 
       ret = (sended_out_length == MSG_MAX_LENGTH);
       EXPECT_NE(ret, 0);
@@ -702,19 +664,19 @@ void *TcpClient(void *param) {
         printf("thread id %d , test sended_out_length == MSG_MAX_LENGTH\n", ((thread_param *)param)->id);
         goto bad_return;
       }
-      ret = (recv_length == MSG_MAX_LENGTH);
-      EXPECT_NE(ret, 0);
-      if (!ret) {
-        printf("thread id %d , recv_length == MSG_MAX_LENGTH\n", ((thread_param *)param)->id);
-        goto bad_return;
-      }
+      //ret = (recv_length == MSG_MAX_LENGTH);
+      //EXPECT_NE(ret, 0);
+      //if (!ret) {
+      //  printf("thread id %d , recv_length == MSG_MAX_LENGTH\n", ((thread_param *)param)->id);
+      //  goto bad_return;
+      //}
 
-      ret = memcmp(recv_buf, send_buf, MSG_MAX_LENGTH);
-      EXPECT_EQ(ret, 0);
-      if (ret) {
-        printf("thread id %d , memcmp\n", ((thread_param *)param)->id);
-        goto bad_return;
-      }
+      //ret = memcmp(recv_buf, send_buf, MSG_MAX_LENGTH);
+      //EXPECT_EQ(ret, 0);
+      //if (ret) {
+      //  printf("thread id %d , memcmp\n", ((thread_param *)param)->id);
+      //  goto bad_return;
+      //}
 
       //sended_out_length = send(sockfd, send_buf, MSG_MAX_LENGTH, 0);
       //recv_length = recv(sockfd, recv_buf, MSG_MAX_LENGTH, 0);
@@ -747,35 +709,66 @@ bad_return:
   return (0);
 }
 
-TEST(TcpClient, 1) {
-  thread_param param[10];
-  pthread_t t[10];
-  memset(bad, 0, 10);
-  for (int i = 0; i < 10; i++) {
-    param[i].id = (uint8_t)i;
-    int ret = pthread_create(t + i, 0, TcpClient, param + i);
-    EXPECT_EQ(ret, 0);
-  }
+void TestTcpClient() {
+    thread_param param[thread_amount];
+    pthread_t t[thread_amount];
+    memset(bad, 0, thread_amount);
+    for (int i = 0; i < thread_amount; i++) {
+      param[i].id = (uint8_t)i;
+      int ret = pthread_create(t + i, 0, TcpClient, param + i);
+      EXPECT_EQ(ret, 0);
+    }
 
-  for (int i = 0; i < 10; i++)
-    pthread_join(t[i], NULL);
+    for (int i = 0; i < thread_amount; i++)
+      pthread_join(t[i], NULL);
 
-  for (int i = 0; i < 10; i++)
-    EXPECT_EQ(bad[i], 0);
+    for (int i = 0; i < thread_amount; i++)
+      EXPECT_EQ(bad[i], 0);
 }
 
-TEST(TcpClient, 2) {
-  thread_param param[10];
-  pthread_t t[10];
-  for (int i = 0; i < 10; i++) {
-    param[i].id = (uint8_t)i;
-    int ret = pthread_create(t + i, 0, TcpClient, param + i);
-    EXPECT_EQ(ret, 0);
-  }
+TEST(TcpClient, 1_0) {
+    TestTcpClient();
+}
 
-  for (int i = 0; i < 10; i++)
-    pthread_join(t[i], NULL);
+TEST(TcpClient, 1_1) {
+    TestTcpClient();
+}
 
-  for (int i = 0; i < 10; i++)
-    EXPECT_EQ(bad[i], 0);
+TEST(TcpClient, 1_2) {
+    TestTcpClient();
+}
+
+TEST(TcpClient, 1_3) {
+    TestTcpClient();
+}
+
+TEST(TcpClient, 1_4) {
+    TestTcpClient();
+}
+
+TEST(TcpClient, 1_5) {
+    TestTcpClient();
+}
+
+TEST(TcpClient, 1_6) {
+    TestTcpClient();
+}
+
+TEST(TcpClient, 1_7) {
+    TestTcpClient();
+}
+
+
+TEST(TcpClient, 1_8) {
+    TestTcpClient();
+}
+
+
+TEST(TcpClient, 1_9) {
+    TestTcpClient();
+}
+
+
+TEST(TcpClient, 1_10) {
+    TestTcpClient();
 }

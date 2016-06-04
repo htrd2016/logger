@@ -5,6 +5,6 @@ CONFIG -= qt
 
 SOURCES += main.c
 
-include(deployment.pri)
-qtcAddDeployment()
+#include(deployment.pri)
+#qtcAddDeployment()
 

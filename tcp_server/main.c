@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <error.h>
 
 #include "memtypes.h"
 #include "mylog.h"
@@ -23,14 +24,14 @@ int echo (void* in_param) {
     char buf[8192];
     int len = 0;
     len = read(ec->fd, buf, 8192);
-    printf("sock %d, read len %d\n", ec->fd, len);
-    if (len <= 0 && errno != EINTR) {
+    printf("sock %d, read len %d, error is %d\n", ec->fd, len, errno);
+    if (len <= 0) {
         printf("read error %d (%d)\n", ec->fd, errno);
         return -1;
     }
     len = write(ec->fd, buf, len);
     printf("sock %d, write len %d\n", ec->fd, len);
-    if (len < 0) return -1;
+    if (len <= 0) return -1;
     return 0;
 }
 

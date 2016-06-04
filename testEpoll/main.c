@@ -125,7 +125,8 @@ void epoll_server(int port)
                 //    perror("read non data\n");
                 //    continue;
                 //}else
-                if(len<=0 && errno != EINTR)//read error
+                printf("recv %d len=%d\n", events[n].data.fd, (int)len);
+                if(len <= 0 && errno != EINTR)//read error
                 {
                     ev.events = EPOLLIN | EPOLLET;
                     ev.data.fd = events[n].data.fd;
@@ -135,8 +136,7 @@ void epoll_server(int port)
                     continue;
                     //exit(EXIT_FAILURE);
                 }
-                printf("recv len=%d\n",(int)len);
-                write(events[n].data.fd, buf, BUFFER_LENGTH);
+                //write(events[n].data.fd, buf, BUFFER_LENGTH);
                 //do_use_fd(events[n].data.fd);
             }
         }

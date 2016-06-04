@@ -183,10 +183,7 @@ int server(accept_callback accept_fun, read_callback read_fun) {
         } else {
           /*if ((events[n].events & EPOLLERR) || (events[n].events & EPOLLHUP) ||
               (!(events[n].events & EPOLLIN)) || read_fun(ec) < 0)*/
-            if((events[n].events & EPOLLRDHUP)
-                    || (events[n].events & EPOLLERR)
-                    || (events[n].events & EPOLLHUP)
-                    || read_fun(ec) < 0){
+         if (read_fun(ec) < 0) {
             close(ec->fd);
             epoll_ctl(kdpfd, EPOLL_CTL_DEL, events[n].data.fd, &ev);
             curfds--;
