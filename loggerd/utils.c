@@ -235,7 +235,7 @@ int format_time3(char *mtime, time_t *out_time)
     struct tm *now = localtime(&nowtime);
 
     if (sscanf(mtime, "%s %2d %2d:%2d:%2d",
-               &szMonth,
+               szMonth,
                &tm1.tm_mday,
                &tm1.tm_hour,
                &tm1.tm_min,

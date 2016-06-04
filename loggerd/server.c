@@ -221,7 +221,6 @@ int server(accept_callback accept_fun, read_callback read_fun) {
 }
 
 static void process_signal(int s) {
-  // printf("got signal %d\n", s);
   mylog(configData.logfile, L_INFO, "got signal %d", s);
   configData.stop = 1;
 }
